@@ -15,9 +15,11 @@ export const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
       {/* Mobile Top Header */}
       <header className="sticky top-0 z-30 bg-[#12141B]/95 backdrop-blur-md border-b border-[#262A36] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#1A1D26] border border-[#DA0E19]/40 flex items-center justify-center text-[#DA0E19]">
-            <Flame className="w-5 h-5 fill-[#DA0E19]" />
-          </div>
+          <img
+            src="/assets/logo.jpeg"
+            alt="PFFI Logo"
+            className="w-9 h-9 object-contain rounded-lg border border-[#262A36] bg-[#0A0B10]"
+          />
           <div>
             <h1 className="font-extrabold font-heading text-sm text-[#F5F6F8]">PFFI Member Portal</h1>
             <p className="text-[10px] text-[#9AA1AE]">Kampala Outdoor Training</p>

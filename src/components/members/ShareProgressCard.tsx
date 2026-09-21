@@ -111,9 +111,11 @@ export const ShareProgressCard: React.FC<ShareProgressCardProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-[#262A36] pb-4 mb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#DA0E19] text-white flex items-center justify-center font-bold">
-                <Flame className="w-6 h-6 fill-white" />
-              </div>
+              <img
+                src="/assets/logo.jpeg"
+                alt="PFFI Logo"
+                className="w-12 h-12 object-contain rounded-xl border border-[#262A36] bg-[#0A0B10]"
+              />
               <div>
                 <h2 className="text-lg font-extrabold font-heading text-[#F5F6F8]">
                   PRIME FORM FITNESS

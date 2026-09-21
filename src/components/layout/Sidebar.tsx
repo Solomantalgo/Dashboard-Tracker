@@ -23,10 +23,12 @@ export const Sidebar: React.FC = () => {
     <aside className="w-64 bg-[#12141B] border-r border-[#262A36] flex flex-col justify-between hidden md:flex shrink-0">
       <div>
         {/* Brand Header & Logo */}
-        <div className="p-5 border-b border-[#262A36] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#1A1D26] border border-[#DA0E19]/40 flex items-center justify-center text-[#DA0E19] shadow-lg shadow-[#DA0E19]/10">
-            <Flame className="w-6 h-6 fill-[#DA0E19]" />
-          </div>
+        <div className="p-4 border-b border-[#262A36] flex items-center gap-3">
+          <img
+            src="/assets/logo.jpeg"
+            alt="Prime Form Fitness Initiative Logo"
+            className="w-12 h-12 object-contain rounded-lg border border-[#262A36] bg-[#0A0B10]"
+          />
           <div>
             <h2 className="font-extrabold font-heading text-[#F5F6F8] text-sm tracking-wider leading-tight">
               PRIME FORM
