@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0A0B10;
+  --surface: #12141B;
+  --surface-2: #1A1D26;
+  --border: #262A36;
+  --text: #F5F6F8;
+  --text-muted: #9AA1AE;
+  --silver: #B9BEC7;
+  --brand: #DA0E19;
+  --brand-hover: #F0202C;
+  --brand-soft: rgba(218, 14, 25, 0.14);
+  --success: #22C55E;
+  --warning: #F59E0B;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Montserrat', sans-serif;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom sleek scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border);
+}
