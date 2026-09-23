@@ -47,9 +47,11 @@ export const Login: React.FC = () => {
         
         <div>
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-[#DA0E19] flex items-center justify-center font-extrabold text-2xl text-white shadow-lg shadow-[#DA0E19]/30">
-              P
-            </div>
+            <img
+              src="/assets/logo.jpeg"
+              alt="Prime Form Fitness Initiative Logo"
+              className="w-12 h-12 rounded-xl object-cover border border-[#262A36] bg-[#0A0B10] shadow-lg shadow-[#DA0E19]/20"
+            />
             <div>
               <h1 className="text-xl font-black font-heading tracking-wider text-[#F5F6F8]">PRIME FORM</h1>
               <p className="text-xs tracking-widest text-[#B9BEC7] uppercase">FITNESS INITIATIVE</p>
