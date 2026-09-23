@@ -123,9 +123,9 @@ export const CoachPortal: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#0A0B10] text-[#F5F6F8] pb-16">
+    <div className="min-h-screen bg-[#0A0B10] text-[#F5F6F8] pb-16 md:pb-0">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-[#0A0B10]/90 backdrop-blur-md border-b border-[#262A36] px-4 py-4 flex items-center justify-between">
+      <header className="sticky top-0 z-30 bg-[#0A0B10]/90 backdrop-blur-md border-b border-[#262A36] px-4 py-4 md:pl-72 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center font-bold text-amber-500">
             {activeCoach?.full_name.substring(0, 2).toUpperCase() || 'CO'}
@@ -150,9 +150,21 @@ export const CoachPortal: React.FC = () => {
         </button>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
+      <aside className="hidden md:flex fixed inset-y-0 left-0 z-20 w-64 bg-[#12141B] border-r border-[#262A36] pt-28 px-4 flex-col gap-2">
+        <div className="flex items-center gap-3 px-2 pb-6">
+          <img src="/assets/logo.jpeg" alt="PFFI Logo" className="w-11 h-11 object-contain rounded-lg border border-[#262A36] bg-[#0A0B10]" />
+          <div>
+            <div className="text-sm font-extrabold font-heading text-[#F5F6F8]">PFFI</div>
+            <div className="text-[10px] text-[#9AA1AE] uppercase tracking-widest">Coach Portal</div>
+          </div>
+        </div>
+        <a href="#coach-session" className="px-3 py-3 rounded-lg bg-[#1A1D26] text-sm font-semibold text-[#F5F6F8]">Today's Session</a>
+        <a href="#assigned-clients" className="px-3 py-3 rounded-lg text-sm font-semibold text-[#9AA1AE] hover:bg-[#1A1D26] hover:text-white">Assigned Athletes</a>
+      </aside>
+
+      <div className="max-w-4xl md:max-w-6xl md:ml-64 md:mr-auto mx-auto px-4 md:px-8 lg:px-10 py-6 space-y-6">
         {/* Today's Session Card */}
-        <div className="bg-[#12141B] border border-[#262A36] rounded-xl p-5 space-y-4">
+        <div id="coach-session" className="bg-[#12141B] border border-[#262A36] rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="w-5 h-5 text-[#DA0E19]" />
@@ -205,7 +217,7 @@ export const CoachPortal: React.FC = () => {
         </div>
 
         {/* Assigned Clients Detail View */}
-        <div className="bg-[#12141B] border border-[#262A36] rounded-xl p-5 space-y-4">
+        <div id="assigned-clients" className="bg-[#12141B] border border-[#262A36] rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-base text-[#F5F6F8] flex items-center gap-2">
               <User className="w-5 h-5 text-amber-500" />

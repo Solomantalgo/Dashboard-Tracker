@@ -26,6 +26,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<any | null>(null);
   const [allMembers, setAllMembers] = useState<Client[]>([]);
   const [allCoaches, setAllCoaches] = useState<Coach[]>([]);
+  const [authenticatedMember, setAuthenticatedMember] = useState<Client | undefined>();
+  const [authenticatedCoach, setAuthenticatedCoach] = useState<Coach | undefined>();
   const [activeMemberId, setActiveMemberId] = useState<string>('m1');
   const [activeCoachId, setActiveCoachId] = useState<string>('c1');
   const [loading, setLoading] = useState<boolean>(true);
@@ -54,15 +56,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadUserRole = async (userId: string) => {
     if (isSupabaseConfigured && supabase) {
       try {
+        setAuthenticatedMember(undefined);
+        setAuthenticatedCoach(undefined);
         const { data: roleRow } = await supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle();
         if (roleRow?.role) {
           setRoleState(roleRow.role as AppRole);
           if (roleRow.role === 'client') {
             const { data: clientRow } = await supabase.from('clients').select('*').eq('user_id', userId).maybeSingle();
-            if (clientRow) setActiveMemberId(clientRow.id);
+            if (clientRow) {
+              setActiveMemberId(clientRow.id);
+              setAuthenticatedMember(clientRow);
+            }
           } else if (roleRow.role === 'coach') {
             const { data: coachRow } = await supabase.from('coaches').select('*').eq('user_id', userId).maybeSingle();
-            if (coachRow) setActiveCoachId(coachRow.id);
+            if (coachRow) {
+              setActiveCoachId(coachRow.id);
+              setAuthenticatedCoach(coachRow);
+            }
           }
         }
       } catch (err) {
@@ -88,6 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setUser(null);
           setRoleState('admin');
+          setAuthenticatedMember(undefined);
+          setAuthenticatedCoach(undefined);
         }
         setLoading(false);
       });
@@ -121,6 +133,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setUser(null);
     setRoleState('admin');
+    setAuthenticatedMember(undefined);
+    setAuthenticatedCoach(undefined);
   };
 
   const setRole = (newRole: AppRole) => {
@@ -138,8 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const activeMember = allMembers.find(m => m.id === activeMemberId) || allMembers[0];
-  const activeCoach = allCoaches.find(c => c.id === activeCoachId) || allCoaches[0];
+  const activeMember = !isDemoMode && role === 'client'
+    ? (allMembers.find(m => m.id === authenticatedMember?.id) || authenticatedMember)
+    : (allMembers.find(m => m.id === activeMemberId) || allMembers[0]);
+  const activeCoach = !isDemoMode && role === 'coach'
+    ? (allCoaches.find(c => c.id === authenticatedCoach?.id) || authenticatedCoach)
+    : (allCoaches.find(c => c.id === activeCoachId) || allCoaches[0]);
 
   return (
     <AuthContext.Provider value={{

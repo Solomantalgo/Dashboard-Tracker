@@ -466,17 +466,21 @@ export const api = {
   async getSessions(): Promise<Session[]> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('sessions').select('*, coaches(full_name)').order('session_date', { ascending: false });
-      if (!error && data) {
-        const { data: attData } = await supabase.from('attendance').select('session_id');
+      if (!error) {
+        const { data: attData, error: attendanceError } = await supabase.from('attendance').select('session_id');
+        if (attendanceError) {
+          console.error('getSessions attendance counts failed; returning real sessions with zero counts:', attendanceError);
+        }
         const countMap = new Map<string, number>();
         attData?.forEach(a => countMap.set(a.session_id, (countMap.get(a.session_id) || 0) + 1));
 
-        return data.map(s => ({
+        return (data ?? []).map(s => ({
           ...s,
           coach_name: s.coaches?.full_name,
           attended_count: countMap.get(s.id) || 0
         }));
       }
+      console.error('getSessions failed, falling back to local data:', error);
     }
     return local.sessions.sort((a, b) => b.session_date.localeCompare(a.session_date));
   },
@@ -564,22 +568,32 @@ export const api = {
   // --- Plans & Payments ---
   async getPlans(): Promise<Plan[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('plans').select('*').eq('active', true);
-      if (data && data.length > 0) return data;
+      const { data, error } = await supabase.from('plans').select('*').eq('active', true);
+      if (error) {
+        console.error('getPlans failed, falling back to local data:', error);
+        return local.plans;
+      }
+      return data ?? [];
     }
     return local.plans;
   },
 
   async getPayments(): Promise<Payment[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('payments').select('*, clients(full_name), plans(name)').order('paid_on', { ascending: false });
-      if (data) {
-        return data.map(p => ({
-          ...p,
-          client_name: p.clients?.full_name,
-          plan_name: p.plans?.name
-        }));
+      const { data, error } = await supabase.from('payments').select('*, clients(full_name), plans(name)').order('paid_on', { ascending: false });
+      if (error) {
+        console.error('getPayments failed, falling back to local data:', error);
+        return local.payments.map(p => {
+          const client = local.clients.find(c => c.id === p.client_id);
+          const plan = local.plans.find(pl => pl.id === p.plan_id);
+          return { ...p, client_name: client?.full_name || 'Member', plan_name: plan?.name || 'Plan' };
+        });
       }
+      return (data ?? []).map(p => ({
+        ...p,
+        client_name: p.clients?.full_name,
+        plan_name: p.plans?.name
+      }));
     }
     return local.payments.map(p => {
       const client = local.clients.find(c => c.id === p.client_id);
@@ -653,13 +667,15 @@ export const api = {
     if (isSupabaseConfigured && supabase) {
       let query = supabase.from('assessments').select('*, clients(full_name)').order('assessed_on', { ascending: false });
       if (clientId) query = query.eq('client_id', clientId);
-      const { data } = await query;
-      if (data) {
-        return data.map(a => ({
-          ...a,
-          client_name: a.clients?.full_name
-        }));
+      const { data, error } = await query;
+      if (error) {
+        console.error('getAssessments failed, falling back to local data:', error);
+        let fallback = local.assessments;
+        if (clientId) fallback = fallback.filter(a => a.client_id === clientId);
+        return fallback.map(a => ({ ...a, client_name: local.clients.find(c => c.id === a.client_id)?.full_name }))
+          .sort((a, b) => b.assessed_on.localeCompare(a.assessed_on));
       }
+      return (data ?? []).map(a => ({ ...a, client_name: a.clients?.full_name }));
     }
 
     let list = local.assessments;
@@ -708,8 +724,12 @@ export const api = {
   // --- Health Screenings (Admin Only) ---
   async getHealthScreening(clientId: string): Promise<HealthScreening | undefined> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('health_screenings').select('*').eq('client_id', clientId).maybeSingle();
-      if (data) return data;
+      const { data, error } = await supabase.from('health_screenings').select('*').eq('client_id', clientId).maybeSingle();
+      if (error) {
+        console.error('getHealthScreening failed, falling back to local data:', error);
+        return local.healthScreenings.find(h => h.client_id === clientId);
+      }
+      return data ?? undefined;
     }
     return local.healthScreenings.find(h => h.client_id === clientId);
   },
@@ -717,8 +737,12 @@ export const api = {
   // --- Operations (Finance, Coaches, Equipment, Content, Targets) ---
   async getTransactions(): Promise<Transaction[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('transactions').select('*').order('txn_date', { ascending: false });
-      if (data) return data;
+      const { data, error } = await supabase.from('transactions').select('*').order('txn_date', { ascending: false });
+      if (error) {
+        console.error('getTransactions failed, falling back to local data:', error);
+        return local.transactions.sort((a, b) => b.txn_date.localeCompare(a.txn_date));
+      }
+      return data ?? [];
     }
     return local.transactions.sort((a, b) => b.txn_date.localeCompare(a.txn_date));
   },
@@ -740,8 +764,12 @@ export const api = {
 
   async getCoaches(): Promise<Coach[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('coaches').select('*').eq('active', true);
-      if (data && data.length > 0) return data;
+      const { data, error } = await supabase.from('coaches').select('*').eq('active', true);
+      if (error) {
+        console.error('getCoaches failed, falling back to local data:', error);
+        return local.coaches;
+      }
+      return data ?? [];
     }
     return local.coaches;
   },
@@ -763,13 +791,12 @@ export const api = {
 
   async getCoachReviews(): Promise<CoachReview[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('coach_reviews').select('*, coaches(full_name)').order('reviewed_on', { ascending: false });
-      if (data) {
-        return data.map(r => ({
-          ...r,
-          coach_name: r.coaches?.full_name
-        }));
+      const { data, error } = await supabase.from('coach_reviews').select('*, coaches(full_name)').order('reviewed_on', { ascending: false });
+      if (error) {
+        console.error('getCoachReviews failed, falling back to local data:', error);
+        return local.coachReviews.map(r => ({ ...r, coach_name: local.coaches.find(ch => ch.id === r.coach_id)?.full_name }));
       }
+      return (data ?? []).map(r => ({ ...r, coach_name: r.coaches?.full_name }));
     }
     return local.coachReviews.map(r => {
       const c = local.coaches.find(ch => ch.id === r.coach_id);
@@ -794,8 +821,12 @@ export const api = {
 
   async getContentPosts(): Promise<ContentPost[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('content_posts').select('*').order('post_date', { ascending: false });
-      if (data) return data;
+      const { data, error } = await supabase.from('content_posts').select('*').order('post_date', { ascending: false });
+      if (error) {
+        console.error('getContentPosts failed, falling back to local data:', error);
+        return local.contentPosts;
+      }
+      return data ?? [];
     }
     return local.contentPosts;
   },
@@ -815,8 +846,12 @@ export const api = {
 
   async getEquipmentNeeds(): Promise<EquipmentNeed[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('equipment_needs').select('*').order('created_at', { ascending: false });
-      if (data) return data;
+      const { data, error } = await supabase.from('equipment_needs').select('*').order('created_at', { ascending: false });
+      if (error) {
+        console.error('getEquipmentNeeds failed, falling back to local data:', error);
+        return local.equipmentNeeds;
+      }
+      return data ?? [];
     }
     return local.equipmentNeeds;
   },
@@ -858,8 +893,12 @@ export const api = {
 
   async getTargets(): Promise<Target[]> {
     if (isSupabaseConfigured && supabase) {
-      const { data } = await supabase.from('targets').select('*');
-      if (data && data.length > 0) return data;
+      const { data, error } = await supabase.from('targets').select('*');
+      if (error) {
+        console.error('getTargets failed, falling back to local data:', error);
+        return local.targets;
+      }
+      return data ?? [];
     }
     return local.targets;
   },

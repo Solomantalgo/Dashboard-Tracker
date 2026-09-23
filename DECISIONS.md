@@ -8,6 +8,7 @@ This document logs key design choices, assumptions, and simple sensible defaults
 - **Implementation:** Explicit branching via `isSupabaseConfigured`.
 - **Supabase Connected Mode (code path):** When `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are provided, the code attempts real queries (`select`, `insert`, `update`, `upsert`, `delete`) against Supabase tables and calculated views. This was not live-tested in this verification pass.
 - **Local Fallback Mode:** When unconfigured or when `VITE_DEMO_MODE=true`, the API seamlessly queries an in-memory & `localStorage` store pre-seeded with invented demo data (20 demo members, 8 weeks of session history, payments, and assessments).
+- **Empty Connected Results:** A successful Supabase list query returns its actual result, including an empty array. Local mock data is used only when Supabase is unconfigured or a query returns an error; connected errors are logged with `console.error`.
 
 ---
 
@@ -55,4 +56,6 @@ Deploy with `supabase functions deploy invite-user`. Supabase supplies `SUPABASE
 - A2 fix: both coach attendance policies are scoped to clients assigned to the authenticated coach; no other unscoped `is_coach()` policy was found.
 - Schema comparison: `pffi_schema_v1.sql` is not text-identical to Appendix A of `PFFI_build_brief.md`; it is an expanded executable migration with idempotent DDL, views, helper functions, RLS, and seed rows. `PFFI_fix_brief.md` is absent from the repository.
 - Build: `npm install` succeeded; `npm run build` succeeded with Vite's >500 kB chunk warning.
-- Not verified: schema execution, Supabase CRUD, refresh persistence, Auth/RLS tests, deactivation/delete runtime behavior, and member/coach invite/revocation. No throwaway Supabase project or credentials were available.
+- Not verified: schema execution, Supabase CRUD, refresh persistence, Auth/RLS tests, deactivation/delete runtime behavior, and member/coach invite/revocation.
+- Read-only live table check: the configured project returned HTTP 200 and zero rows for all queried domain tables, including `coaches`, `plans`, and `targets`. No writes or UI verification were performed because the project was not identified as disposable, admin credentials were unavailable, and browser automation was unavailable.
+- Portal identity/layout fix: `MemberLayout` demo switcher controls are gated by explicit `VITE_DEMO_MODE=true`; real client and coach records loaded by `AuthContext` are authoritative rather than falling back to the first mock/list record. Member and coach portals use bottom tabs on mobile and desktop side rails with wider responsive content areas. Real-user and three-viewport visual checks remain unverified.

@@ -112,7 +112,7 @@ const { data: health, error: healthErr } = await supabase.from('health_screening
 console.log('Health screenings:', health, healthErr);
 ```
 
-No query results are claimed here: this pass did not have a throwaway Supabase project or real test users, so database-level enforcement remains unverified.
+No RLS/Auth query results are claimed here: this pass had no real test users, so database-level role enforcement remains unverified.
 
 ## Verification status (2026-09-23)
 
@@ -121,4 +121,7 @@ No query results are claimed here: this pass did not have a throwaway Supabase p
 - The repository does not contain `PFFI_fix_brief.md`, so that baseline could not be compared directly.
 - A1 is statically fixed: protected routes now require a signed-in user unless `VITE_DEMO_MODE=true`; an unconfigured build with demo mode off shows the login screen and warning.
 - A2 is statically fixed: coach attendance select and manage policies are restricted to clients assigned to the authenticated coach. No other domain policy uses unscoped `is_coach()`.
-- No throwaway Supabase project was available in this environment. Schema execution, real CRUD writes, refresh persistence, Auth/RLS isolation, deactivation behavior, deletion cascades, invite/revocation, and coach isolation remain live-unverified.
+- Empty-table fix: connected list reads now return successful Supabase empty results as empty arrays/`undefined`; local mock data is used only when the query errors, with a visible `console.error`.
+- Read-only live check on the configured Supabase project returned HTTP 200 and 0 rows for `clients`, `coaches`, `plans`, `payments`, `sessions`, `attendance`, `assessments`, `transactions`, `coach_reviews`, `content_posts`, `equipment_needs`, and `targets`.
+- No writes or UI clicks were performed because this workspace does not establish that the configured project is disposable, no admin test credentials are available, and browser automation is unavailable. Adding rows, empty-state rendering, UUID coach selection, and wrong-key console behavior remain unverified.
+- Portal controls/layout fix: member identity/admin controls are explicit-demo-only, authenticated client/coach rows are authoritative for real sessions, and both portals use mobile bottom navigation plus desktop/tablet side rails and wider content containers. Real-user login and visual checks at 375px, 768px, and 1440px remain unverified.
