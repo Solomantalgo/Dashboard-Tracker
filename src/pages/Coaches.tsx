@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { api } from '../services/api';
 import { Coach, CoachReview } from '../types/database';
-import { UserCheck, Star, Plus, Shield } from 'lucide-react';
+import { UserCheck, Star, Plus, Shield, Mail, CheckCircle, UserX } from 'lucide-react';
 import { Modal } from '../components/common/Modal';
 
 export const Coaches: React.FC = () => {
@@ -23,6 +23,12 @@ export const Coaches: React.FC = () => {
   const [punctuality, setPunctuality] = useState(5);
   const [attendanceTracking, setAttendanceTracking] = useState(5);
   const [notes, setNotes] = useState('');
+
+  // Coach Portal Invite State
+  const [inviteCoach, setInviteCoach] = useState<Coach | null>(null);
+  const [coachEmail, setCoachEmail] = useState('');
+  const [inviteResult, setInviteResult] = useState<{ success: boolean; tempPassword?: string } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -71,6 +77,40 @@ export const Coaches: React.FC = () => {
     loadData();
   };
 
+  const handleOpenInvite = (c: Coach) => {
+    setInviteCoach(c);
+    setCoachEmail(c.phone ? `coach_${c.full_name.toLowerCase().replace(/\s+/g, '')}@pffi.ug` : '');
+    setInviteResult(null);
+  };
+
+  const handleSendCoachInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteCoach || !coachEmail) return;
+
+    setActionLoading(true);
+    try {
+      const res = await api.inviteCoachToPortal(inviteCoach.id, coachEmail);
+      setInviteResult(res);
+      await loadData();
+    } catch (err) {
+      console.error('Coach portal invite failed:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRevokeCoachAccess = async (coachId: string) => {
+    setActionLoading(true);
+    try {
+      await api.revokeCoachPortalAccess(coachId);
+      await loadData();
+    } catch (err) {
+      console.error('Revoke coach access failed:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <AdminLayout title="Coaches Management & Reviews">
       <div className="flex justify-between items-center bg-[#12141B] border border-[#262A36] rounded-[12px] p-4">
@@ -82,13 +122,13 @@ export const Coaches: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setIsReviewModalOpen(true)}
-            className="px-3 py-2 text-xs font-bold rounded-lg bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8]"
+            className="px-3 py-2 text-xs font-bold rounded-lg bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19]"
           >
             + Add Review
           </button>
           <button
             onClick={() => setIsCoachModalOpen(true)}
-            className="px-4 py-2 text-xs font-bold rounded-lg bg-[#DA0E19] text-white"
+            className="px-4 py-2 text-xs font-bold rounded-lg bg-[#DA0E19] text-white hover:bg-[#F0202C]"
           >
             + New Coach
           </button>
@@ -101,7 +141,7 @@ export const Coaches: React.FC = () => {
           const avgLead = coachRevs.length > 0 ? (coachRevs.reduce((s, r) => s + r.leadership, 0) / coachRevs.length).toFixed(1) : '5.0';
 
           return (
-            <div key={c.id} className="bg-[#12141B] border border-[#262A36] rounded-[12px] p-5 space-y-3">
+            <div key={c.id} className="bg-[#12141B] border border-[#262A36] rounded-[12px] p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-[#1A1D26] border border-[#DA0E19] text-[#DA0E19] font-black flex items-center justify-center text-lg">
@@ -116,6 +156,34 @@ export const Coaches: React.FC = () => {
                   <Star className="w-3.5 h-3.5 fill-amber-400" />
                   {avgLead} / 5.0
                 </span>
+              </div>
+
+              {/* Bug 5: Coach Portal Invitation Flow */}
+              <div className="pt-3 border-t border-[#262A36] flex items-center justify-between text-xs">
+                {c.user_id ? (
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                      <CheckCircle className="w-3.5 h-3.5" /> Portal Active
+                    </span>
+                    <button
+                      onClick={() => handleRevokeCoachAccess(c.id)}
+                      disabled={actionLoading}
+                      className="px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20"
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between w-full">
+                    <span className="text-[#9AA1AE]">No Login Account</span>
+                    <button
+                      onClick={() => handleOpenInvite(c)}
+                      className="px-3 py-1.5 rounded-lg bg-[#DA0E19] text-white font-bold hover:bg-[#F0202C] flex items-center gap-1"
+                    >
+                      <Mail className="w-3.5 h-3.5" /> Invite Coach
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           );
@@ -181,6 +249,55 @@ export const Coaches: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Coach Portal Invite Modal */}
+      {inviteCoach && (
+        <Modal isOpen={Boolean(inviteCoach)} onClose={() => setInviteCoach(null)} title={`Invite Coach: ${inviteCoach.full_name}`}>
+          {!inviteResult ? (
+            <form onSubmit={handleSendCoachInvite} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[#9AA1AE] mb-1">Coach Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={coachEmail}
+                  onChange={e => setCoachEmail(e.target.value)}
+                  placeholder="coach@pffi.ug"
+                  className="w-full p-2.5 bg-[#1A1D26] border border-[#262A36] rounded-lg text-white"
+                />
+              </div>
+              <p className="text-[11px] text-[#9AA1AE]">
+                Creates a coach login credential. The coach will log in to mark session attendance and view their assigned athletes.
+              </p>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setInviteCoach(null)} className="px-3 py-1.5 text-xs bg-[#1A1D26] rounded text-[#9AA1AE]">Cancel</button>
+                <button type="submit" disabled={actionLoading} className="px-4 py-1.5 text-xs font-bold bg-[#DA0E19] text-white rounded">
+                  {actionLoading ? 'Inviting...' : 'Create Login & Link'}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 shrink-0" />
+                <span>Coach Login Successfully Created!</span>
+              </div>
+
+              {inviteResult.tempPassword && (
+                <div className="p-4 bg-[#1A1D26] border border-[#262A36] rounded-xl space-y-1">
+                  <span className="text-[#9AA1AE] text-[10px] uppercase font-bold">One-Time Password:</span>
+                  <div className="font-mono text-lg font-bold text-white tracking-widest">{inviteResult.tempPassword}</div>
+                </div>
+              )}
+
+              <button onClick={() => setInviteCoach(null)} className="w-full py-2 bg-[#DA0E19] text-white font-bold rounded-lg">
+                Done
+              </button>
+            </div>
+          )}
+        </Modal>
+      )}
 
       {/* Add Review Modal */}
       <Modal isOpen={isReviewModalOpen} onClose={() => setIsReviewModalOpen(false)} title="Coach Review">

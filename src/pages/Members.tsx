@@ -14,7 +14,7 @@ export const Members: React.FC = () => {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active');
   const [membershipFilter, setMembershipFilter] = useState<'all' | 'active' | 'expired' | 'due_soon' | 'never_paid'>('all');
   const [coachFilter, setCoachFilter] = useState<string>('all');
 
@@ -29,7 +29,7 @@ export const Members: React.FC = () => {
     setLoading(true);
     try {
       const [mRes, cRes] = await Promise.all([
-        api.getMembers(),
+        api.getMembers(true),
         api.getCoaches()
       ]);
       setMembers(mRes);
@@ -105,9 +105,9 @@ export const Members: React.FC = () => {
           onChange={(e) => setStatusFilter(e.target.value as any)}
           className="px-3 py-2 text-xs bg-[#12141B] border border-[#262A36] rounded-lg text-[#F5F6F8] focus:outline-none focus:border-[#DA0E19]"
         >
-          <option value="all">All Statuses (Active / Inactive)</option>
-          <option value="active">Active Members Only</option>
+          <option value="active">Active Members Only (Default)</option>
           <option value="inactive">Inactive Members Only</option>
+          <option value="all">All Members (Active & Inactive)</option>
         </select>
 
         {/* Membership status filter */}
@@ -167,11 +167,12 @@ export const Members: React.FC = () => {
                 filteredMembers.map((m) => {
                   const mStatus = (m as any).membership_status || 'never_paid';
                   const showUpRate = (m as any).show_up_rate_pct || 0;
+                  const isInactive = m.status === 'inactive';
 
                   return (
                     <tr
                       key={m.id}
-                      className="hover:bg-[#1A1D26]/60 transition-colors group cursor-pointer"
+                      className={`hover:bg-[#1A1D26]/60 transition-colors group cursor-pointer ${isInactive ? 'opacity-60 bg-black/20' : ''}`}
                       onClick={() => navigate(`/members/${m.id}`)}
                     >
                       <td className="p-3.5 pl-5">
@@ -198,7 +199,7 @@ export const Members: React.FC = () => {
                       </td>
 
                       <td className="p-3.5">
-                        <Badge status={mStatus} />
+                        <Badge status={isInactive ? 'inactive' : mStatus} />
                         {(m as any).expires_on && (
                           <span className="block text-[10px] text-[#9AA1AE] mt-0.5">
                             Exp: {(m as any).expires_on}

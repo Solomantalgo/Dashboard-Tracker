@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Plus, CreditCard, Calendar, UserCheck, Shield, User } from 'lucide-react';
+import { Search, CreditCard, Calendar, Shield, User, Users, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,9 +14,14 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenRecordPayment,
   onStartSession
 }) => {
-  const { role, setRole, activeMember, setActiveMemberId, allMembers } = useAuth();
+  const { role, setRole, activeMember, setActiveMemberId, allMembers, user, signOut, isDemoMode } = useAuth();
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   return (
     <header className="sticky top-0 z-30 bg-[#0A0B10]/90 backdrop-blur-md border-b border-[#262A36] px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
@@ -39,7 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
           />
         </div>
 
-        {/* Quick Action Buttons */}
+        {/* Quick Action Buttons for Admin */}
         {role === 'admin' && (
           <div className="flex items-center gap-2">
             <button
@@ -65,50 +70,61 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
 
-        {/* Demo Role Switcher */}
+        {/* Demo Mode Role Switcher (ONLY when VITE_DEMO_MODE=true) */}
+        {isDemoMode && (
+          <div className="flex items-center gap-2 pl-2 border-l border-[#262A36]">
+            <div className="flex items-center rounded-lg p-0.5 bg-[#12141B] border border-[#262A36] text-xs">
+              <button
+                onClick={() => {
+                  setRole('admin');
+                  navigate('/dashboard');
+                }}
+                className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 ${role === 'admin' ? 'bg-[#DA0E19] text-white shadow-sm' : 'text-[#9AA1AE] hover:text-white'}`}
+              >
+                <Shield className="w-3 h-3" />
+                Admin
+              </button>
+              <button
+                onClick={() => {
+                  setRole('client');
+                  navigate('/portal');
+                }}
+                className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 ${role === 'client' ? 'bg-[#DA0E19] text-white shadow-sm' : 'text-[#9AA1AE] hover:text-white'}`}
+              >
+                <User className="w-3 h-3" />
+                Portal
+              </button>
+            </div>
+
+            {role === 'client' && (
+              <select
+                value={activeMember?.id || ''}
+                onChange={(e) => setActiveMemberId(e.target.value)}
+                className="bg-[#1A1D26] text-xs border border-[#262A36] text-[#F5F6F8] rounded-md px-2 py-1 focus:outline-none"
+              >
+                {allMembers.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.full_name} ({m.member_code})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        {/* User Account / Avatar & Sign Out */}
         <div className="flex items-center gap-2 pl-2 border-l border-[#262A36]">
-          <div className="flex items-center rounded-lg p-0.5 bg-[#12141B] border border-[#262A36] text-xs">
-            <button
-              onClick={() => {
-                setRole('admin');
-                navigate('/dashboard');
-              }}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 ${role === 'admin' ? 'bg-[#DA0E19] text-white shadow-sm' : 'text-[#9AA1AE] hover:text-white'}`}
-            >
-              <Shield className="w-3 h-3" />
-              Admin
-            </button>
-            <button
-              onClick={() => {
-                setRole('client');
-                navigate('/portal');
-              }}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 ${role === 'client' ? 'bg-[#DA0E19] text-white shadow-sm' : 'text-[#9AA1AE] hover:text-white'}`}
-            >
-              <User className="w-3 h-3" />
-              Portal
-            </button>
-          </div>
-
-          {/* If Portal Mode, allow selecting demo member */}
-          {role === 'client' && (
-            <select
-              value={activeMember?.id || ''}
-              onChange={(e) => setActiveMemberId(e.target.value)}
-              className="bg-[#1A1D26] text-xs border border-[#262A36] text-[#F5F6F8] rounded-md px-2 py-1 focus:outline-none"
-            >
-              {allMembers.map(m => (
-                <option key={m.id} value={m.id}>
-                  {m.full_name} ({m.member_code})
-                </option>
-              ))}
-            </select>
-          )}
-
-          {/* User Avatar Initials */}
           <div className="w-8 h-8 rounded-full bg-[#1A1D26] border border-[#262A36] text-[#B9BEC7] font-semibold text-xs flex items-center justify-center">
-            {role === 'admin' ? 'AD' : activeMember?.full_name.substring(0, 2).toUpperCase() || 'MB'}
+            {role === 'admin' ? 'AD' : role === 'coach' ? 'CH' : activeMember?.full_name?.substring(0, 2).toUpperCase() || 'MB'}
           </div>
+
+          <button
+            onClick={handleSignOut}
+            title="Sign Out"
+            className="p-1.5 rounded-lg text-[#9AA1AE] hover:text-white hover:bg-[#1A1D26] transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </header>

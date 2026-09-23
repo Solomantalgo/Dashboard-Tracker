@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Members } from './pages/Members';
 import { MemberProfile } from './pages/MemberProfile';
@@ -13,13 +14,26 @@ import { ContentTracker } from './pages/ContentTracker';
 import { Equipment } from './pages/Equipment';
 import { Settings } from './pages/Settings';
 import { MemberPortal } from './pages/portal/MemberPortal';
+import { CoachPortal } from './pages/coach/CoachPortal';
 
-export const App: React.FC = () => {
+const AppRoutes: React.FC = () => {
+  const { role, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0A0B10] flex items-center justify-center text-[#9AA1AE] text-sm font-semibold">
+        Loading PFFI Member Tracker...
+      </div>
+    );
+  }
+
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Admin Routes */}
+    <Routes>
+      <Route path="/login" element={<Login />} />
+
+      {/* Role-Based Navigation Routing */}
+      {role === 'admin' && (
+        <>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/members" element={<Members />} />
@@ -32,13 +46,42 @@ export const App: React.FC = () => {
           <Route path="/content" element={<ContentTracker />} />
           <Route path="/equipment" element={<Equipment />} />
           <Route path="/settings" element={<Settings />} />
+        </>
+      )}
 
-          {/* Member Portal Routes */}
+      {role === 'client' && (
+        <>
+          <Route path="/" element={<Navigate to="/portal" replace />} />
           <Route path="/portal/*" element={<MemberPortal />} />
+        </>
+      )}
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+      {role === 'coach' && (
+        <>
+          <Route path="/" element={<Navigate to="/coach" replace />} />
+          <Route path="/coach/*" element={<CoachPortal />} />
+        </>
+      )}
+
+      {/* Fallback navigation based on active role */}
+      <Route
+        path="*"
+        element={
+          <Navigate
+            to={role === 'client' ? '/portal' : role === 'coach' ? '/coach' : '/dashboard'}
+            replace
+          />
+        }
+      />
+    </Routes>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
   );
