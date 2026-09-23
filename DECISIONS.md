@@ -21,7 +21,7 @@ This document logs key design choices, assumptions, and simple sensible defaults
 
 ## 3. Member Portal Invites & Account Provisioning
 - **Invite Flow:** Admin triggers "Invite to Member Portal" from an athlete's profile.
-- **Provisioning Choice (code path):** The invite code calls Supabase Auth sign-up, upserts `user_roles`, links `clients.user_id`, and generates a temporary password. Email delivery, login, and database rows were not live-tested.
+- **Provisioning Choice:** Portal invites use the `supabase/functions/invite-user` Edge Function with a generated temporary password and `email_confirm: true`. The function verifies the caller's JWT and `user_roles.role = 'admin'`, then uses the service-role key server-side to create the Auth user, insert `user_roles`, and link `clients.user_id` or `coaches.user_id`. The service-role key is never sent to the browser. Email invites were not chosen because the existing UI already displays a temporary password.
 - **Revocation (code path):** The code deletes the corresponding `user_roles` entry and resets the linked user ID while keeping the domain record. Runtime revocation was not live-tested.
 
 ---
@@ -41,6 +41,10 @@ This document logs key design choices, assumptions, and simple sensible defaults
 ## 6. Payment System Seam
 - **Seam Pattern:** Implemented `PaymentProvider` interface with `ManualProvider` as default.
 - **Feature Flag:** `VITE_ONLINE_PAYMENTS=false` keeps online mobile money collection options disabled in the UI until provider webhooks are configured.
+
+### Invite Function Deployment
+
+Deploy with `supabase functions deploy invite-user`. Supabase supplies `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` inside the Edge Function environment; none belong in the frontend `.env`. The function has not been deployed or live-tested in this environment.
 
 ---
 

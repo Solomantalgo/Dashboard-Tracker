@@ -44,6 +44,16 @@ VITE_DEMO_MODE=false
 3. Paste the contents of `pffi_schema_v1.sql` from this repository and run the script. This is the intended setup path; execution was not verified in this pass.
 4. The script is intended to create the required tables, calculated views (`v_attendance_rate_30d`, `v_at_risk_clients`, `v_membership_status`, `v_finance_ledger`), helper functions (`kampala_today()`), and Row Level Security (RLS) policies. Live creation and policy behavior remain unverified.
 
+### Portal Invite Function
+
+Portal invites use the Edge Function at `supabase/functions/invite-user`. Deploy it with:
+
+```bash
+supabase functions deploy invite-user
+```
+
+The function verifies the caller is an authenticated admin, creates a confirmed Auth user with a one-time temporary password, and links `user_roles` plus the target member or coach record server-side. The service-role key is used only inside the function and must never be placed in the frontend `.env`.
+
 ### 3. Local Development
 
 Install dependencies and start the Vite dev server:

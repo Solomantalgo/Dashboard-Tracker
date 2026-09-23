@@ -879,25 +879,12 @@ export const api = {
     const tempPassword = `Pffi#${Math.random().toString(36).slice(-6)}`;
 
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { data: authData, error: authErr } = await supabase.auth.signUp({
-          email,
-          password: tempPassword,
-          options: { data: { role: 'client', clientId } }
-        });
-
-        const newUserId = authData.user?.id || 'user_' + Math.random().toString(36).substring(2, 9);
-        if (authErr && !authErr.message.includes('already registered')) throw authErr;
-
-        if (newUserId) {
-          await supabase.from('user_roles').upsert({ user_id: newUserId, role: 'client' });
-          await supabase.from('clients').update({ user_id: newUserId }).eq('id', clientId);
-        }
-        return { success: true, tempPassword };
-      } catch (err) {
-        console.error('Supabase portal invite error:', err);
-        throw err;
-      }
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { email, targetType: 'client', targetId: clientId }
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Unable to create member portal access.');
+      return data;
     }
 
     const mockUserId = `auth_client_${clientId}`;
@@ -930,25 +917,12 @@ export const api = {
     const tempPassword = `Coach#${Math.random().toString(36).slice(-6)}`;
 
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { data: authData, error: authErr } = await supabase.auth.signUp({
-          email,
-          password: tempPassword,
-          options: { data: { role: 'coach', coachId } }
-        });
-
-        const newUserId = authData.user?.id || 'user_' + Math.random().toString(36).substring(2, 9);
-        if (authErr && !authErr.message.includes('already registered')) throw authErr;
-
-        if (newUserId) {
-          await supabase.from('user_roles').upsert({ user_id: newUserId, role: 'coach' });
-          await supabase.from('coaches').update({ user_id: newUserId }).eq('id', coachId);
-        }
-        return { success: true, tempPassword };
-      } catch (err) {
-        console.error('Supabase coach portal invite error:', err);
-        throw err;
-      }
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { email, targetType: 'coach', targetId: coachId }
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Unable to create coach portal access.');
+      return data;
     }
 
     const mockUserId = `auth_coach_${coachId}`;
