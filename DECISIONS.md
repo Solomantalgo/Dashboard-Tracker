@@ -6,29 +6,29 @@ This document logs key design choices, assumptions, and simple sensible defaults
 
 ## 1. Dual-Mode Data Layer (`src/services/api.ts`)
 - **Implementation:** Explicit branching via `isSupabaseConfigured`.
-- **Supabase Connected Mode:** When `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are provided, all API operations perform real queries (`select`, `insert`, `update`, `upsert`, `delete`) against Supabase tables and calculated views (`v_attendance_rate_30d`, `v_at_risk_clients`, `v_membership_status`, `v_finance_ledger`).
+- **Supabase Connected Mode (code path):** When `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are provided, the code attempts real queries (`select`, `insert`, `update`, `upsert`, `delete`) against Supabase tables and calculated views. This was not live-tested in this verification pass.
 - **Local Fallback Mode:** When unconfigured or when `VITE_DEMO_MODE=true`, the API seamlessly queries an in-memory & `localStorage` store pre-seeded with invented demo data (20 demo members, 8 weeks of session history, payments, and assessments).
 
 ---
 
 ## 2. Real Authentication & Role-Based Scoping
 - **Authentication:** Supabase Auth handles email + password authentication. User sessions are persisted and listened to via `onAuthStateChange`.
-- **Roles Boundary (`user_roles`):** Upon login, `AuthContext` queries `user_roles` table to retrieve the user's role (`admin`, `client`, or `coach`).
+- **Roles Boundary (`user_roles`, code path):** Upon login, `AuthContext` queries `user_roles` to retrieve the user's role (`admin`, `client`, or `coach`). Protected routes also require a real user unless `VITE_DEMO_MODE=true`; runtime role and RLS behavior remains unverified.
 - **Role Switcher UI:** The free role switcher in the app header is removed from standard production builds and is rendered **only** when `VITE_DEMO_MODE=true` for developer testing.
-- **Coach Role Scoping:** Coaches logging in land in `/coach` (Coach Portal). Views are restricted to today's session (attendance marking) and assigned athletes only (`clients.coach_id = coach.id`). Financial transactions, coach reviews, and other coaches' clients are excluded by RLS and UI routing.
+- **Coach Role Scoping (intended):** The code routes coaches toward `/coach`, and the schema contains policies for assigned athletes. Attendance select/manage policies now use the same assigned-client predicate; financial transactions, coach reviews, and other coaches' clients were not live-tested.
 
 ---
 
 ## 3. Member Portal Invites & Account Provisioning
 - **Invite Flow:** Admin triggers "Invite to Member Portal" from an athlete's profile.
-- **Provisioning Choice:** Creating an Auth user via Supabase Auth generates a user account, inserts a row into `user_roles` (`role = 'client'`), and links `clients.user_id`. A one-time temporary password is generated for the admin to hand to the athlete for immediate sign in.
-- **Revocation:** Admin can click "Revoke Access" on the member profile or coach record, which deletes the corresponding `user_roles` entry and resets `clients.user_id` to `null` while keeping all member data intact.
+- **Provisioning Choice (code path):** The invite code calls Supabase Auth sign-up, upserts `user_roles`, links `clients.user_id`, and generates a temporary password. Email delivery, login, and database rows were not live-tested.
+- **Revocation (code path):** The code deletes the corresponding `user_roles` entry and resets the linked user ID while keeping the domain record. Runtime revocation was not live-tested.
 
 ---
 
 ## 4. Member Deactivation vs. Permanent Deletion
-- **Deactivation (`status = 'inactive'`):** Deactivating a member excludes them from active member counts, attendance session checklists, and alert widgets. Their payment, attendance, and assessment history remains fully intact. Admin can search and filter inactive members to reactivate them anytime.
-- **Permanent Delete:** A rare, irreversible privacy action. Gated behind a modal requiring the admin to type the member's full name to confirm. Performs a SQL cascading delete.
+- **Deactivation (`status = 'inactive'`, code path):** The code updates the status and has active/inactive filtering paths. KPI, attendance, and history behavior was not live-tested.
+- **Permanent Delete (code path):** The UI requires the member's full name and the Supabase path deletes the client row; the schema declares cascading foreign keys. Database deletion and history removal were not live-tested.
 
 ---
 
@@ -41,3 +41,14 @@ This document logs key design choices, assumptions, and simple sensible defaults
 ## 6. Payment System Seam
 - **Seam Pattern:** Implemented `PaymentProvider` interface with `ManualProvider` as default.
 - **Feature Flag:** `VITE_ONLINE_PAYMENTS=false` keeps online mobile money collection options disabled in the UI until provider webhooks are configured.
+
+---
+
+## Verification status (2026-09-23)
+
+- Static inspection: code paths for Bugs 1, 3, 4, and 5 were found; the local fallbacks and requested actions are present.
+- A1 fix: protected routes now require `user` unless explicit `VITE_DEMO_MODE=true`; unconfigured demo-off login displays a warning.
+- A2 fix: both coach attendance policies are scoped to clients assigned to the authenticated coach; no other unscoped `is_coach()` policy was found.
+- Schema comparison: `pffi_schema_v1.sql` is not text-identical to Appendix A of `PFFI_build_brief.md`; it is an expanded executable migration with idempotent DDL, views, helper functions, RLS, and seed rows. `PFFI_fix_brief.md` is absent from the repository.
+- Build: `npm install` succeeded; `npm run build` succeeded with Vite's >500 kB chunk warning.
+- Not verified: schema execution, Supabase CRUD, refresh persistence, Auth/RLS tests, deactivation/delete runtime behavior, and member/coach invite/revocation. No throwaway Supabase project or credentials were available.

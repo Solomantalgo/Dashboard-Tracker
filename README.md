@@ -41,8 +41,8 @@ VITE_DEMO_MODE=false
 
 1. Create a fresh project on [Supabase](https://supabase.com).
 2. Open the **SQL Editor** in your Supabase Dashboard.
-3. Paste the contents of `pffi_schema_v1.sql` from this repository and run the script.
-4. The schema creates all required tables, calculated views (`v_attendance_rate_30d`, `v_at_risk_clients`, `v_membership_status`, `v_finance_ledger`), helper functions (`kampala_today()`), and strict Row Level Security (RLS) policies.
+3. Paste the contents of `pffi_schema_v1.sql` from this repository and run the script. This is the intended setup path; execution was not verified in this pass.
+4. The script is intended to create the required tables, calculated views (`v_attendance_rate_30d`, `v_at_risk_clients`, `v_membership_status`, `v_finance_ledger`), helper functions (`kampala_today()`), and Row Level Security (RLS) policies. Live creation and policy behavior remain unverified.
 
 ### 3. Local Development
 
@@ -59,11 +59,13 @@ The application will launch at `http://localhost:5173`.
 
 ## Authentication & Role-Based Scoping
 
-The application supports three roles defined in the database `user_roles` table:
+The code defines three roles intended to be backed by the database `user_roles` table:
 
-1. **Admin (`admin`):** Full access to all screens, members directory, financial ledger, coach reviews, equipment wishlist, and health screening records.
-2. **Member (`client`):** Read-only Member Portal (`/portal`). Scoped strictly to their own client record (`clients.user_id = auth.uid()`).
-3. **Coach (`coach`):** Coach Portal (`/coach`). Can view today's session, mark attendance, and manage physical assessments for their assigned athletes only.
+1. **Admin (`admin`):** Intended to have full access to all screens, members directory, financial ledger, coach reviews, equipment wishlist, and health screening records.
+2. **Member (`client`):** Intended to use the read-only Member Portal (`/portal`) and be scoped to their own client record (`clients.user_id = auth.uid()`).
+3. **Coach (`coach`):** Intended to use the Coach Portal (`/coach`) for today's session, attendance, and assigned athletes.
+
+These role and RLS behaviors require live verification against a Supabase project; the local code inspection found the corresponding Auth and policy paths but does not prove runtime behavior.
 
 ---
 
@@ -76,32 +78,37 @@ The application supports three roles defined in the database `user_roles` table:
 
 ## Security Testing (RLS Verification)
 
-Row Level Security (RLS) is enforced at the PostgreSQL database boundary on every table.
+The schema contains Row Level Security (RLS) policies intended to enforce boundaries at PostgreSQL. Live enforcement was not verified in this pass.
 
-### Security Test Trajectory & Results
+### Required test, not completed in this pass
 
 To verify database-level enforcement, open the browser DevTools Console while signed in as a **Member** user (`role = client`) and execute queries using the Supabase JS client:
 
 ```js
 // 1. Attempt querying all clients
 const { data: clients, error: clientErr } = await supabase.from('clients').select('*');
-console.log('Clients count:', clients.length); 
-// RESULT: Returns ONLY 1 row where clients.user_id matches auth.uid(). Other members are hidden by DB.
+console.log('Clients count:', clients?.length, clientErr);
 
 // 2. Attempt querying company financial transactions
 const { data: txns, error: txnErr } = await supabase.from('transactions').select('*');
-console.log('Transactions:', txns); 
-// RESULT: Returns [] (empty array). Access blocked by RLS policy.
+console.log('Transactions:', txns, txnErr);
 
 // 3. Attempt querying coach performance reviews
 const { data: reviews, error: revErr } = await supabase.from('coach_reviews').select('*');
-console.log('Coach reviews:', reviews); 
-// RESULT: Returns [] (empty array). Access blocked by RLS policy.
+console.log('Coach reviews:', reviews, revErr);
 
 // 4. Attempt querying sensitive health screenings of other members
 const { data: health, error: healthErr } = await supabase.from('health_screenings').select('*');
-console.log('Health screenings:', health); 
-// RESULT: Returns [] (empty array). Access blocked by RLS policy.
+console.log('Health screenings:', health, healthErr);
 ```
 
-All queries targeting unauthorized domain data return empty result sets directly from PostgreSQL, confirming that frontend interface routing is backed by hard database-level security boundaries.
+No query results are claimed here: this pass did not have a throwaway Supabase project or real test users, so database-level enforcement remains unverified.
+
+## Verification status (2026-09-23)
+
+- Static code inspection found Supabase branches with local fallbacks for the requested domain operations, a Supabase Auth login form, deactivate/reactivate and name-confirmed permanent-delete paths, and member/coach invite paths.
+- `npm install` completed successfully and `npm run build` completed successfully. Vite emitted a warning that the JavaScript chunk is larger than 500 kB after minification.
+- The repository does not contain `PFFI_fix_brief.md`, so that baseline could not be compared directly.
+- A1 is statically fixed: protected routes now require a signed-in user unless `VITE_DEMO_MODE=true`; an unconfigured build with demo mode off shows the login screen and warning.
+- A2 is statically fixed: coach attendance select and manage policies are restricted to clients assigned to the authenticated coach. No other domain policy uses unscoped `is_coach()`.
+- No throwaway Supabase project was available in this environment. Schema execution, real CRUD writes, refresh persistence, Auth/RLS isolation, deactivation behavior, deletion cascades, invite/revocation, and coach isolation remain live-unverified.

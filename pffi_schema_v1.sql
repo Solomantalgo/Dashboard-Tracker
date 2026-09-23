@@ -316,10 +316,16 @@ drop policy if exists "coach reads assigned clients" on clients;
 create policy "coach reads assigned clients" on clients for select using (coach_id in (select id from coaches where user_id = auth.uid()));
 
 drop policy if exists "coach attendance select" on attendance;
-create policy "coach attendance select" on attendance for select using (is_coach());
+create policy "coach attendance select" on attendance for select using (
+  client_id in (select id from clients where coach_id in (select id from coaches where user_id = auth.uid()))
+);
 
 drop policy if exists "coach attendance manage" on attendance;
-create policy "coach attendance manage" on attendance for all using (is_coach()) with check (is_coach());
+create policy "coach attendance manage" on attendance for all using (
+  client_id in (select id from clients where coach_id in (select id from coaches where user_id = auth.uid()))
+) with check (
+  client_id in (select id from clients where coach_id in (select id from coaches where user_id = auth.uid()))
+);
 
 drop policy if exists "coach reads assigned assessments" on assessments;
 create policy "coach reads assigned assessments" on assessments for select using (

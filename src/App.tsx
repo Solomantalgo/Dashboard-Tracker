@@ -17,13 +17,24 @@ import { MemberPortal } from './pages/portal/MemberPortal';
 import { CoachPortal } from './pages/coach/CoachPortal';
 
 const AppRoutes: React.FC = () => {
-  const { role, loading } = useAuth();
+  const { role, user, isDemoMode, loading } = useAuth();
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0A0B10] flex items-center justify-center text-[#9AA1AE] text-sm font-semibold">
         Loading PFFI Member Tracker...
       </div>
+    );
+  }
+
+  // A role value is not authentication. Only explicit demo mode may render
+  // protected routes without a real Supabase session.
+  if (!isDemoMode && !user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
     );
   }
 

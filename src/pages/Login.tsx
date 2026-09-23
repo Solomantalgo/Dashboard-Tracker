@@ -84,6 +84,12 @@ export const Login: React.FC = () => {
             </p>
           </div>
 
+          {!isSupabaseConfigured && (
+            <div className="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm">
+              Demo mode — not connected to a live database. Set `VITE_DEMO_MODE=true` for explicit local demo access, or configure Supabase to sign in to a real account.
+            </div>
+          )}
+
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-3">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />

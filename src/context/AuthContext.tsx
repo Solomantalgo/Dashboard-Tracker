@@ -30,7 +30,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeCoachId, setActiveCoachId] = useState<string>('c1');
   const [loading, setLoading] = useState<boolean>(true);
 
-  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true' || !isSupabaseConfigured;
+  // Demo access must be explicitly enabled. An absent/misconfigured Supabase
+  // environment still uses the API's local fallback, but must not bypass login.
+  const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 
   const refreshData = async () => {
     try {
