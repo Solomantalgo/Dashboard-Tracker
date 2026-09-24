@@ -2,31 +2,38 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { api } from '../services/api';
 import { Target, Plan } from '../types/database';
-import { Settings as SettingsIcon, Download, Shield, Lock, Check } from 'lucide-react';
+import { Download, Shield, Lock, Check, AlertTriangle } from 'lucide-react';
 
 export const Settings: React.FC = () => {
-  const [targets, setTargets] = useState<Target[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [activeGoal, setActiveGoal] = useState<number>(25);
   const [attendanceGoal, setAttendanceGoal] = useState<number>(80);
   const [revenueGoal, setRevenueGoal] = useState<number>(1000000);
   const [savedMsg, setSavedMsg] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const loadData = async () => {
-    const [tRes, pRes] = await Promise.all([
-      api.getTargets(),
-      api.getPlans()
-    ]);
-    setTargets(tRes);
-    setPlans(pRes);
+    setLoading(true);
+    setLoadError('');
+    try {
+      const [tRes, pRes] = await Promise.all([api.getTargets(), api.getPlans()]);
+      setPlans(pRes);
 
-    const aT = tRes.find((t: Target) => t.metric === 'active_members');
-    const attT = tRes.find((t: Target) => t.metric === 'attendance_rate');
-    const rT = tRes.find((t: Target) => t.metric === 'monthly_revenue');
-
-    if (aT) setActiveGoal(aT.goal);
-    if (attT) setAttendanceGoal(attT.goal);
-    if (rT) setRevenueGoal(rT.goal);
+      const activeTarget = tRes.find((t: Target) => t.metric === 'active_members');
+      const attendanceTarget = tRes.find((t: Target) => t.metric === 'attendance_rate');
+      const revenueTarget = tRes.find((t: Target) => t.metric === 'monthly_revenue');
+      if (activeTarget) setActiveGoal(activeTarget.goal);
+      if (attendanceTarget) setAttendanceGoal(attendanceTarget.goal);
+      if (revenueTarget) setRevenueGoal(revenueTarget.goal);
+    } catch (err) {
+      console.error('Error loading settings:', err);
+      setLoadError('Settings could not be loaded. Check the connection and try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -35,12 +42,21 @@ export const Settings: React.FC = () => {
 
   const handleSaveGoals = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api.updateTarget('active_members', activeGoal);
-    await api.updateTarget('attendance_rate', attendanceGoal);
-    await api.updateTarget('monthly_revenue', revenueGoal);
-
-    setSavedMsg('Weekly target goals updated successfully!');
-    setTimeout(() => setSavedMsg(''), 3000);
+    setSaving(true);
+    setSavedMsg('');
+    setSaveError('');
+    try {
+      await api.updateTarget('active_members', activeGoal);
+      await api.updateTarget('attendance_rate', attendanceGoal);
+      await api.updateTarget('monthly_revenue', revenueGoal);
+      setSavedMsg('Dashboard targets saved successfully.');
+      setTimeout(() => setSavedMsg(''), 3000);
+    } catch (err) {
+      console.error('Error saving dashboard targets:', err);
+      setSaveError('Targets could not be saved. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleExportCsv = async () => {
@@ -56,7 +72,6 @@ export const Settings: React.FC = () => {
       m.level || '',
       (m as any).membership_status || 'never_paid'
     ]);
-
     const csvStr = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvStr], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -66,125 +81,61 @@ export const Settings: React.FC = () => {
     a.click();
   };
 
+  const inputClass = 'min-h-11 w-full rounded-lg border border-[#262A36] bg-[#1A1D26] px-3 py-2 text-xs text-[#F5F6F8] focus:border-[#DA0E19] focus:outline-none focus:ring-2 focus:ring-[#DA0E19]/25 disabled:cursor-wait disabled:opacity-60';
+
   return (
     <AdminLayout title="Hub Configuration & Settings">
       <div className="space-y-6">
-        {/* Weekly Targets Editor */}
-        <div className="bg-[#12141B] border border-[#262A36] rounded-[12px] p-5 space-y-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-bold font-heading text-[#F5F6F8]">Weekly Target Goals</h3>
-              <p className="text-xs text-[#9AA1AE]">Configures dashboard progress bar targets</p>
+        <div className="space-y-4 rounded-[12px] border border-[#262A36] bg-[#12141B] p-4 sm:p-5">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h3 className="font-bold font-heading text-[#F5F6F8]">Dashboard Targets</h3>
+              <p className="text-xs text-[#9AA1AE]">Configure the progress targets used across the dashboard.</p>
             </div>
-            {savedMsg && (
-              <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded border border-emerald-500/20">
-                ✓ {savedMsg}
-              </span>
-            )}
+            {savedMsg && <span role="status" className="rounded border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs font-bold text-emerald-400"><Check className="mr-1 inline h-3.5 w-3.5" />{savedMsg}</span>}
           </div>
 
-          <form onSubmit={handleSaveGoals} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#F5F6F8] mb-1">Active Members Goal</label>
-              <input
-                type="number"
-                value={activeGoal}
-                onChange={(e) => setActiveGoal(parseInt(e.target.value, 10))}
-                className="w-full px-3 py-2 text-xs bg-[#1A1D26] border border-[#262A36] rounded-lg text-[#F5F6F8]"
-              />
-            </div>
+          {loadError && <div role="alert" className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" /><div><p className="font-semibold">Unable to load configuration</p><p className="mt-1 text-amber-100/80">{loadError}</p><button type="button" onClick={loadData} className="mt-2 min-h-10 rounded-lg bg-[#DA0E19] px-3 py-2 font-bold text-white">Try Again</button></div></div>}
 
+          <form onSubmit={handleSaveGoals} className="grid grid-cols-1 gap-4 md:grid-cols-3" aria-busy={loading}>
             <div>
-              <label className="block text-xs font-semibold text-[#F5F6F8] mb-1">Attendance Rate Goal (%)</label>
-              <input
-                type="number"
-                value={attendanceGoal}
-                onChange={(e) => setAttendanceGoal(parseInt(e.target.value, 10))}
-                className="w-full px-3 py-2 text-xs bg-[#1A1D26] border border-[#262A36] rounded-lg text-[#F5F6F8]"
-              />
+              <label className="mb-1 block text-xs font-semibold text-[#F5F6F8]">Active Members Goal <span className="font-normal text-[#9AA1AE]">(members)</span></label>
+              <input type="number" value={activeGoal} onChange={(e) => setActiveGoal(parseInt(e.target.value, 10))} disabled={loading || saving} className={inputClass} />
             </div>
-
             <div>
-              <label className="block text-xs font-semibold text-[#F5F6F8] mb-1">Monthly Revenue Goal (UGX)</label>
-              <input
-                type="number"
-                value={revenueGoal}
-                onChange={(e) => setRevenueGoal(parseInt(e.target.value, 10))}
-                className="w-full px-3 py-2 text-xs bg-[#1A1D26] border border-[#262A36] rounded-lg text-[#F5F6F8]"
-              />
+              <label className="mb-1 block text-xs font-semibold text-[#F5F6F8]">Attendance Rate Goal <span className="font-normal text-[#9AA1AE]">(percentage)</span></label>
+              <input type="number" value={attendanceGoal} onChange={(e) => setAttendanceGoal(parseInt(e.target.value, 10))} disabled={loading || saving} className={inputClass} />
             </div>
-
-            <div className="md:col-span-3 text-right">
-              <button
-                type="submit"
-                className="px-5 py-2 text-xs font-bold bg-[#DA0E19] text-white rounded-lg shadow-md"
-              >
-                Save Target Goals
-              </button>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-[#F5F6F8]">Monthly Revenue Goal <span className="font-normal text-[#9AA1AE]">(UGX)</span></label>
+              <input type="number" value={revenueGoal} onChange={(e) => setRevenueGoal(parseInt(e.target.value, 10))} disabled={loading || saving} className={inputClass} />
+            </div>
+            <div className="space-y-2 text-left md:col-span-3 md:text-right">
+              {loading && <p className="text-xs text-[#9AA1AE]">Loading configured targets...</p>}
+              {saveError && <p role="alert" className="text-xs font-semibold text-rose-300">{saveError}</p>}
+              <button type="submit" disabled={loading || saving} className="min-h-11 w-full rounded-lg bg-[#DA0E19] px-5 py-2 text-xs font-bold text-white shadow-md transition-colors hover:bg-[#F0202C] disabled:cursor-wait disabled:opacity-60 md:w-auto">{saving ? 'Saving...' : 'Save Dashboard Targets'}</button>
             </div>
           </form>
         </div>
 
-        {/* Membership Plans Summary */}
-        <div className="bg-[#12141B] border border-[#262A36] rounded-[12px] p-5 space-y-3">
+        <div className="space-y-3 rounded-[12px] border border-[#262A36] bg-[#12141B] p-4 sm:p-5">
           <h3 className="font-bold font-heading text-[#F5F6F8]">Active Membership Plans</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {plans.map(p => (
-              <div key={p.id} className="p-4 rounded-lg bg-[#1A1D26] border border-[#262A36] flex justify-between items-center">
-                <div>
-                  <h4 className="font-bold text-xs text-[#F5F6F8]">{p.name}</h4>
-                  <p className="text-[11px] text-[#9AA1AE]">Duration: {p.duration_days ? `${p.duration_days} days` : `${p.session_count} sessions`}</p>
-                </div>
-                <span className="font-extrabold text-[#DA0E19] text-sm tabular-nums">
-                  UGX {p.price_ugx.toLocaleString()}
-                </span>
-              </div>
-            ))}
-          </div>
+          {loading ? <p className="rounded-lg bg-[#1A1D26] p-4 text-xs text-[#9AA1AE]">Loading membership plans...</p> : <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{plans.map(p => <div key={p.id} className="flex min-w-0 flex-col items-start gap-3 rounded-lg border border-[#262A36] bg-[#1A1D26] p-4 sm:flex-row sm:items-center sm:justify-between"><div className="min-w-0"><h4 className="break-words text-xs font-bold text-[#F5F6F8]">{p.name}</h4><p className="mt-1 text-[11px] text-[#9AA1AE]">Duration: {p.duration_days ? `${p.duration_days} days` : `${p.session_count} sessions`}</p></div><span className="break-words text-sm font-extrabold tabular-nums text-[#DA0E19]">UGX {p.price_ugx.toLocaleString()}</span></div>)}</div>}
         </div>
 
-        {/* Read-Only System Rules Summary */}
-        <div className="bg-[#12141B] border border-[#262A36] rounded-[12px] p-5 space-y-3">
-          <h3 className="font-bold font-heading text-[#F5F6F8] flex items-center gap-2">
-            <Shield className="w-4 h-4 text-[#DA0E19]" />
-            Read-Only Business Rules (Phase 1 Defaults)
-          </h3>
+        <div className="space-y-3 rounded-[12px] border border-[#262A36] bg-[#12141B] p-4 sm:p-5">
+          <h3 className="flex items-center gap-2 font-bold font-heading text-[#F5F6F8]"><Shield className="h-4 w-4 shrink-0 text-[#DA0E19]" />Read-Only Business Rules</h3>
           <div className="space-y-2 text-xs text-[#B9BEC7]">
-            <div className="p-3 rounded bg-[#1A1D26] border border-[#262A36] flex justify-between">
-              <span>Show-Up Rate Window:</span>
-              <span className="font-bold text-[#F5F6F8]">Rolling 30 Days (Ignores sessions before join date)</span>
-            </div>
-            <div className="p-3 rounded bg-[#1A1D26] border border-[#262A36] flex justify-between">
-              <span>"Stopped Coming" Trigger:</span>
-              <span className="font-bold text-[#F5F6F8]">No attendance for 14+ consecutive days</span>
-            </div>
-            <div className="p-3 rounded bg-[#1A1D26] border border-[#262A36] flex justify-between">
-              <span>Assessment Due Interval:</span>
-              <span className="font-bold text-[#F5F6F8]">Every 4 weeks (28 days)</span>
-            </div>
-            <div className="p-3 rounded bg-[#1A1D26] border border-[#262A36] flex justify-between">
-              <span>Online Payments Status:</span>
-              <span className="font-bold text-amber-400 flex items-center gap-1">
-                <Lock className="w-3.5 h-3.5" />
-                VITE_ONLINE_PAYMENTS=false (Manual Provider Seam Active)
-              </span>
-            </div>
+            <div className="flex flex-col gap-1 rounded border border-[#262A36] bg-[#1A1D26] p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"><span>Show-Up Rate Window:</span><span className="font-bold text-[#F5F6F8] sm:text-right">Rolling 30 Days (Ignores sessions before join date)</span></div>
+            <div className="flex flex-col gap-1 rounded border border-[#262A36] bg-[#1A1D26] p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"><span>Stopped Coming Trigger:</span><span className="font-bold text-[#F5F6F8] sm:text-right">No attendance for 14+ consecutive days</span></div>
+            <div className="flex flex-col gap-1 rounded border border-[#262A36] bg-[#1A1D26] p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"><span>Assessment Due Interval:</span><span className="font-bold text-[#F5F6F8] sm:text-right">Every 4 weeks (28 days)</span></div>
+            <div className="flex flex-col gap-1 rounded border border-[#262A36] bg-[#1A1D26] p-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"><span>Online Payments Status:</span><span className="flex items-start gap-1 font-bold text-amber-400 sm:justify-end sm:text-right"><Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />Online payments disabled; manual recording active.</span></div>
           </div>
         </div>
 
-        {/* CSV Export Button */}
-        <div className="bg-[#12141B] border border-[#262A36] rounded-[12px] p-5 flex items-center justify-between">
-          <div>
-            <h3 className="font-bold font-heading text-[#F5F6F8]">Export Members Directory</h3>
-            <p className="text-xs text-[#9AA1AE]">Download clean CSV file of all registered hub members</p>
-          </div>
-          <button
-            onClick={handleExportCsv}
-            className="px-4 py-2 text-xs font-bold rounded-lg bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] flex items-center gap-2"
-          >
-            <Download className="w-4 h-4 text-[#DA0E19]" />
-            Export CSV File
-          </button>
+        <div className="flex flex-col items-start gap-4 rounded-[12px] border border-[#262A36] bg-[#12141B] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="min-w-0"><h3 className="font-bold font-heading text-[#F5F6F8]">Export Members Directory</h3><p className="text-xs text-[#9AA1AE]">Download clean CSV file of all registered hub members</p></div>
+          <button onClick={handleExportCsv} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#262A36] bg-[#1A1D26] px-4 py-2 text-xs font-bold text-[#F5F6F8] hover:border-[#DA0E19] sm:w-auto"><Download className="h-4 w-4 text-[#DA0E19]" />Export CSV File</button>
         </div>
       </div>
     </AdminLayout>

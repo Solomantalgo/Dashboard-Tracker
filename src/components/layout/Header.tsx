@@ -25,13 +25,13 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 min-w-0 overflow-hidden bg-[#0A0B10]/90 backdrop-blur-md border-b border-[#262A36] px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <h1 className="text-xl sm:text-2xl font-extrabold font-heading text-[#F5F6F8] tracking-tight">
+      <div className="min-w-0 flex-1">
+        <h1 className="break-words text-xl sm:text-2xl font-extrabold font-heading text-[#F5F6F8] tracking-tight">
           {title}
         </h1>
       </div>
 
-      <div className="flex items-center gap-3 flex-1 max-w-md justify-end">
+      <div className="flex shrink-0 items-center justify-end gap-2 sm:gap-3">
         {/* Global Search */}
         <div className="relative hidden md:block w-full max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9AA1AE]" />
@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
                   setRole('client');
                   navigate('/portal');
                 }}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 ${role === 'client' ? 'bg-[#DA0E19] text-white shadow-sm' : 'text-[#9AA1AE] hover:text-white'}`}
+                className={`max-[374px]:hidden px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 ${role === 'client' ? 'bg-[#DA0E19] text-white shadow-sm' : 'text-[#9AA1AE] hover:text-white'}`}
               >
                 <User className="w-3 h-3" />
                 Portal
