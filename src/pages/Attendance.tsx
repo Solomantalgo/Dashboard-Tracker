@@ -126,7 +126,7 @@ export const Attendance: React.FC = () => {
           >
             {sessions.map(s => (
               <option key={s.id} value={s.id}>
-                {s.session_date} - {s.title} ({s.attended_count || 0} present)
+                {s.session_date} - {s.title} ({s.attended_count ?? 0} present)
               </option>
             ))}
           </select>

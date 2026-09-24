@@ -184,7 +184,7 @@ export const MemberProfile: React.FC = () => {
   }
 
   const mStatus = (member as any).membership_status || 'never_paid';
-  const showUpRate = (member as any).show_up_rate_pct || 0;
+  const showUpRate = (member as any).show_up_rate_pct ?? 0;
   const isInactive = member.status === 'inactive';
 
   const chartData = [...assessments].reverse().map(a => ({

@@ -9,7 +9,36 @@ import {
 } from './mockData';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { defaultPaymentProvider } from './payments/manualProvider';
-import { format, subDays, addDays, parseISO, differenceInDays } from 'date-fns';
+import { format, subDays, addDays, parseISO, differenceInDays, subMonths, startOfMonth } from 'date-fns';
+
+export interface DashboardChartData {
+  attendance: Array<{ week: string; start: string; end: string; attended: number }>;
+  revenue: Array<{ month: string; key: string; revenue: number }>;
+}
+
+const getKampalaWeekStart = (today: Date) => {
+  const dayOfWeek = today.getUTCDay();
+  return subDays(today, (dayOfWeek + 6) % 7);
+};
+
+const buildChartPeriods = (today: Date): DashboardChartData => {
+  const currentWeekStart = getKampalaWeekStart(today);
+  const attendance = Array.from({ length: 8 }, (_, index) => {
+    const start = subDays(currentWeekStart, (7 - index) * 7);
+    return { week: format(start, 'MMM d'), start: format(start, 'yyyy-MM-dd'), end: format(addDays(start, 6), 'yyyy-MM-dd'), attended: 0 };
+  });
+
+  const currentMonth = startOfMonth(today);
+  const revenue = Array.from({ length: 6 }, (_, index) => {
+    const start = startOfMonth(subMonths(currentMonth, 5 - index));
+    return { month: format(start, 'MMM'), key: format(start, 'yyyy-MM'), revenue: 0 };
+  });
+
+  return {
+    attendance,
+    revenue
+  };
+};
 
 // In-Memory & LocalStorage State (Fallback Demo Mode)
 class LocalState {
@@ -106,6 +135,80 @@ const local = new LocalState();
 
 export const api = {
   // --- Dashboard Metrics & Calculated Views ---
+  async getDashboardChartData(): Promise<DashboardChartData> {
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data: kampalaToday, error: todayError } = await supabase.rpc('kampala_today');
+        if (todayError) throw todayError;
+
+        const today = parseISO(String(kampalaToday));
+        const periods = buildChartPeriods(today);
+        const firstWeek = periods.attendance[0];
+        const lastWeek = periods.attendance[periods.attendance.length - 1];
+        const firstMonth = `${periods.revenue[0].key}-01`;
+
+        const [{ data: attendanceRows, error: attendanceError }, { data: paymentRows, error: paymentError }] = await Promise.all([
+          supabase
+            .from('attendance')
+            .select('session_id, sessions!inner(session_date)')
+            .gte('sessions.session_date', firstWeek.start)
+            .lte('sessions.session_date', lastWeek.end),
+          supabase
+            .from('payments')
+            .select('paid_on, amount_ugx')
+            .eq('status', 'confirmed')
+            .gte('paid_on', firstMonth)
+            .lte('paid_on', format(today, 'yyyy-MM-dd'))
+        ]);
+
+        if (attendanceError) throw attendanceError;
+        if (paymentError) throw paymentError;
+
+        const attendance = periods.attendance.map(period => ({ ...period }));
+        (attendanceRows || []).forEach((row: any) => {
+          const sessionDate = row.sessions?.session_date;
+          const period = attendance.find(item => sessionDate >= item.start && sessionDate <= item.end);
+          if (period) period.attended += 1;
+        });
+
+        const revenue = periods.revenue.map(period => ({ ...period }));
+        (paymentRows || []).forEach((payment: any) => {
+          const period = revenue.find(item => item.key === String(payment.paid_on).slice(0, 7));
+          if (period) period.revenue += Number(payment.amount_ugx ?? 0);
+        });
+
+        return { attendance, revenue };
+      } catch (err) {
+        // Never substitute seeded/mock history when a configured database query fails.
+        // Keep the chart honest until the real query is available again.
+        console.warn('Supabase chart query failed; showing zero-valued periods:', err);
+        const emptyPeriods = buildChartPeriods(new Date());
+        return emptyPeriods;
+      }
+    }
+
+    const today = new Date();
+    const periods = buildChartPeriods(today);
+    const sessionsById = new Map(local.sessions.map(session => [session.id, session.session_date]));
+    const attendance = periods.attendance.map(period => ({ ...period }));
+
+    local.attendance.forEach(row => {
+      const sessionDate = sessionsById.get(row.session_id);
+      const period = attendance.find(item => sessionDate !== undefined && sessionDate >= item.start && sessionDate <= item.end);
+      if (period) period.attended += 1;
+    });
+
+    const revenue = periods.revenue.map(period => ({ ...period }));
+    local.payments
+      .filter(payment => payment.status === 'confirmed')
+      .forEach(payment => {
+        const period = revenue.find(item => item.key === payment.paid_on.slice(0, 7));
+        if (period) period.revenue += Number(payment.amount_ugx ?? 0);
+      });
+
+    return { attendance, revenue };
+  },
+
   async getDashboardMetrics(): Promise<DashboardMetrics> {
     if (isSupabaseConfigured && supabase) {
       try {
@@ -131,7 +234,7 @@ export const api = {
           supabase.from('equipment_needs').select('*', { count: 'exact', head: true }).eq('resolved', false)
         ]);
 
-        const checkinsThisWeek = attData?.length || 0;
+        const checkinsThisWeek = attData?.length ?? 0;
 
         let totalRates = 0;
         let validRateCount = 0;
@@ -143,7 +246,7 @@ export const api = {
         });
         const showUpRatePct = validRateCount > 0 ? Math.round(totalRates / validRateCount) : 0;
 
-        const revenueMtdUgx = paymentsMtd?.reduce((sum, p) => sum + (p.amount_ugx || 0), 0) || 0;
+        const revenueMtdUgx = paymentsMtd?.reduce((sum, p) => sum + (p.amount_ugx ?? 0), 0) ?? 0;
 
         let expiredCount = 0;
         let expiringCount = 0;
@@ -162,15 +265,15 @@ export const api = {
         });
 
         return {
-          activeMembers: activeMembers || 0,
+          activeMembers: activeMembers ?? 0,
           checkinsThisWeek,
           showUpRatePct,
           revenueMtdUgx,
           outstandingUgx,
           expiredCount,
           expiringCount,
-          stoppedComingCount: atRiskView?.length || 0,
-          equipmentNeedsCount: equipmentCount || 0
+          stoppedComingCount: atRiskView?.length ?? 0,
+          equipmentNeedsCount: equipmentCount ?? 0
         };
       } catch (err) {
         console.warn('Supabase metric query failed, falling back to local calculation:', err);
@@ -332,7 +435,7 @@ export const api = {
   async addMember(input: Omit<Client, 'id' | 'member_code' | 'created_at'>, healthNotes?: string): Promise<Client> {
     if (isSupabaseConfigured && supabase) {
       const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true });
-      const nextNum = (count || 0) + 1;
+      const nextNum = (count ?? 0) + 1;
       const member_code = `PFFI${String(nextNum).padStart(3, '0')}`;
 
       const insertData = {
@@ -472,12 +575,12 @@ export const api = {
           console.error('getSessions attendance counts failed; returning real sessions with zero counts:', attendanceError);
         }
         const countMap = new Map<string, number>();
-        attData?.forEach(a => countMap.set(a.session_id, (countMap.get(a.session_id) || 0) + 1));
+      attData?.forEach(a => countMap.set(a.session_id, (countMap.get(a.session_id) ?? 0) + 1));
 
         return (data ?? []).map(s => ({
           ...s,
           coach_name: s.coaches?.full_name,
-          attended_count: countMap.get(s.id) || 0
+          attended_count: countMap.get(s.id) ?? 0
         }));
       }
       console.error('getSessions failed, falling back to local data:', error);
@@ -549,7 +652,7 @@ export const api = {
         await supabase.from('attendance').delete().eq('session_id', sessionId).eq('client_id', clientId);
       }
       const { count } = await supabase.from('attendance').select('*', { count: 'exact', head: true }).eq('session_id', sessionId);
-      return count || 0;
+      return count ?? 0;
     }
 
     const index = local.attendance.findIndex(a => a.session_id === sessionId && a.client_id === clientId);

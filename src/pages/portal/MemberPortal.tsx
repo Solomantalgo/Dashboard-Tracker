@@ -29,7 +29,7 @@ const MemberHome: React.FC = () => {
   if (!activeMember) return <div>Select a member above</div>;
 
   const mStatus = (activeMember as any).membership_status || 'never_paid';
-  const showUpRate = (activeMember as any).show_up_rate_pct || 0;
+  const showUpRate = (activeMember as any).show_up_rate_pct ?? 0;
   const expiresOn = (activeMember as any).expires_on;
 
   let daysLeft = 0;
@@ -134,20 +134,20 @@ const MemberProgress: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <div className="p-4 rounded-xl bg-[#12141B] border border-[#262A36]">
           <span className="text-[10px] text-[#9AA1AE] uppercase font-bold">Max Pushups</span>
-          <h3 className="text-xl font-black text-[#F5F6F8] mt-1">{latest?.pushups || 0} reps</h3>
+          <h3 className="text-xl font-black text-[#F5F6F8] mt-1">{latest?.pushups ?? 0} reps</h3>
           {baseline && latest && (
             <p className="text-[10px] font-bold text-emerald-400 mt-0.5">
-              +{(latest.pushups || 0) - (baseline.pushups || 0)} reps since baseline
+              +{(latest.pushups ?? 0) - (baseline.pushups ?? 0)} reps since baseline
             </p>
           )}
         </div>
 
         <div className="p-4 rounded-xl bg-[#12141B] border border-[#262A36]">
           <span className="text-[10px] text-[#9AA1AE] uppercase font-bold">Plank Hold</span>
-          <h3 className="text-xl font-black text-[#F5F6F8] mt-1">{latest?.plank_seconds || 0} s</h3>
+          <h3 className="text-xl font-black text-[#F5F6F8] mt-1">{latest?.plank_seconds ?? 0} s</h3>
           {baseline && latest && (
             <p className="text-[10px] font-bold text-emerald-400 mt-0.5">
-              +{(latest.plank_seconds || 0) - (baseline.plank_seconds || 0)}s hold
+              +{(latest.plank_seconds ?? 0) - (baseline.plank_seconds ?? 0)}s hold
             </p>
           )}
         </div>

@@ -29,9 +29,9 @@ export const ShareProgressCard: React.FC<ShareProgressCardProps> = ({
   const baseline = assessments[assessments.length - 1];
   const latest = assessments[0];
 
-  const pushupDiff = (latest?.pushups || 0) - (baseline?.pushups || 0);
-  const plankDiff = (latest?.plank_seconds || 0) - (baseline?.plank_seconds || 0);
-  const runDiff = (baseline?.run_time_seconds || 0) - (latest?.run_time_seconds || 0); // positive = faster
+  const pushupDiff = (latest?.pushups ?? 0) - (baseline?.pushups ?? 0);
+  const plankDiff = (latest?.plank_seconds ?? 0) - (baseline?.plank_seconds ?? 0);
+  const runDiff = (baseline?.run_time_seconds ?? 0) - (latest?.run_time_seconds ?? 0); // positive = faster
 
   const handleDownloadImage = async () => {
     if (!cardRef.current) return;
@@ -152,7 +152,7 @@ export const ShareProgressCard: React.FC<ShareProgressCardProps> = ({
               <div className="p-3 rounded-xl bg-[#0A0B10]/80 border border-[#262A36]">
                 <span className="text-[10px] uppercase font-bold text-[#9AA1AE]">Pushup Reps</span>
                 <div className="flex items-baseline justify-between mt-1">
-                  <span className="text-lg font-bold text-[#F5F6F8]">{latest?.pushups || 0} reps</span>
+                  <span className="text-lg font-bold text-[#F5F6F8]">{latest?.pushups ?? 0} reps</span>
                   {pushupDiff > 0 && (
                     <span className="text-xs font-bold text-emerald-400">+{pushupDiff} reps</span>
                   )}
@@ -164,7 +164,7 @@ export const ShareProgressCard: React.FC<ShareProgressCardProps> = ({
               <div className="p-3 rounded-xl bg-[#0A0B10]/80 border border-[#262A36]">
                 <span className="text-[10px] uppercase font-bold text-[#9AA1AE]">Plank Hold</span>
                 <div className="flex items-baseline justify-between mt-1">
-                  <span className="text-lg font-bold text-[#F5F6F8]">{latest?.plank_seconds || 0}s</span>
+                  <span className="text-lg font-bold text-[#F5F6F8]">{latest?.plank_seconds ?? 0}s</span>
                   {plankDiff > 0 && (
                     <span className="text-xs font-bold text-emerald-400">+{plankDiff}s hold</span>
                   )}

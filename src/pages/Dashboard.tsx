@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { KpiCard } from '../components/common/KpiCard';
 import { Badge } from '../components/common/Badge';
-import { api } from '../services/api';
+import { api, DashboardChartData } from '../services/api';
 import { DashboardMetrics, Target, Client, EquipmentNeed } from '../types/database';
 import {
   Users, CalendarCheck, TrendingUp, CreditCard, AlertTriangle,
@@ -21,6 +21,7 @@ export const Dashboard: React.FC = () => {
   const [targets, setTargets] = useState<Target[]>([]);
   const [members, setMembers] = useState<Client[]>([]);
   const [equipment, setEquipment] = useState<EquipmentNeed[]>([]);
+  const [chartData, setChartData] = useState<DashboardChartData>({ attendance: [], revenue: [] });
   const [loading, setLoading] = useState(true);
 
   // Modals
@@ -33,16 +34,18 @@ export const Dashboard: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [mRes, tRes, clRes, eqRes] = await Promise.all([
+      const [mRes, tRes, clRes, eqRes, chartsRes] = await Promise.all([
         api.getDashboardMetrics(),
         api.getTargets(),
         api.getMembers(),
-        api.getEquipmentNeeds()
+        api.getEquipmentNeeds(),
+        api.getDashboardChartData()
       ]);
       setMetrics(mRes);
       setTargets(tRes);
       setMembers(clRes);
       setEquipment(eqRes);
+      setChartData(chartsRes);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
@@ -55,28 +58,10 @@ export const Dashboard: React.FC = () => {
   }, []);
 
   // Targets helper
-  const getGoal = (metric: Target['metric']) => targets.find(t => t.metric === metric)?.goal || 1;
+  const getGoal = (metric: Target['metric']) => targets.find(t => t.metric === metric)?.goal ?? 1;
 
-  // Chart data generators
-  const attendanceChartData = [
-    { week: 'Wk 1', attended: 42, sessions: 4 },
-    { week: 'Wk 2', attended: 48, sessions: 4 },
-    { week: 'Wk 3', attended: 45, sessions: 4 },
-    { week: 'Wk 4', attended: 52, sessions: 4 },
-    { week: 'Wk 5', attended: 50, sessions: 4 },
-    { week: 'Wk 6', attended: 56, sessions: 4 },
-    { week: 'Wk 7', attended: 54, sessions: 4 },
-    { week: 'Wk 8', attended: metrics?.checkinsThisWeek || 58, sessions: 4 },
-  ];
-
-  const revenueChartData = [
-    { month: 'Oct', revenue: 750000 },
-    { month: 'Nov', revenue: 850000 },
-    { month: 'Dec', revenue: 900000 },
-    { month: 'Jan', revenue: 950000 },
-    { month: 'Feb', revenue: 1000000 },
-    { month: 'Mar', revenue: metrics?.revenueMtdUgx || 850000 },
-  ];
+  const attendanceChartData = chartData.attendance;
+  const revenueChartData = chartData.revenue;
 
   // At-risk and expired member lists for alerts
   const expiredMembers = members.filter(m => (m as any).membership_status === 'expired' || (m as any).membership_status === 'never_paid');
@@ -134,33 +119,33 @@ export const Dashboard: React.FC = () => {
       <div className="w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-stretch">
         <KpiCard
           title="Active Members"
-          value={metrics?.activeMembers || 0}
+          value={metrics?.activeMembers ?? 0}
           subtitle={`Target: ${getGoal('active_members')} members`}
           icon={Users}
         />
         <KpiCard
           title="Check-ins This Wk"
-          value={metrics?.checkinsThisWeek || 0}
+          value={metrics?.checkinsThisWeek ?? 0}
           subtitle="Mon - Thu 7am sessions"
           icon={CalendarCheck}
         />
         <KpiCard
           title="Show-Up Rate (30d)"
-          value={`${metrics?.showUpRatePct || 0}%`}
+          value={`${metrics?.showUpRatePct ?? 0}%`}
           subtitle={`Goal: ${getGoal('attendance_rate')}% show-up`}
           icon={Activity}
-          trendPositive={(metrics?.showUpRatePct || 0) >= getGoal('attendance_rate')}
+          trendPositive={(metrics?.showUpRatePct ?? 0) >= getGoal('attendance_rate')}
         />
         <KpiCard
           title="Revenue MTD"
-          value={`UGX ${(metrics?.revenueMtdUgx || 0).toLocaleString()}`}
+          value={`UGX ${(metrics?.revenueMtdUgx ?? 0).toLocaleString()}`}
           subtitle={`Goal: UGX ${getGoal('monthly_revenue').toLocaleString()}`}
           icon={TrendingUp}
         />
         <KpiCard
           title="Outstanding Due"
-          value={`UGX ${(metrics?.outstandingUgx || 0).toLocaleString()}`}
-          subtitle={`${(metrics?.expiredCount || 0)} expired or unpaid`}
+          value={`UGX ${(metrics?.outstandingUgx ?? 0).toLocaleString()}`}
+          subtitle={`${(metrics?.expiredCount ?? 0)} expired or unpaid`}
           icon={AlertTriangle}
         />
       </div>
@@ -172,7 +157,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div>
               <h3 className="font-bold font-heading text-[#F5F6F8]">Attendance Trends</h3>
-              <p className="text-xs leading-5 text-[#9AA1AE]">Illustrative history; latest week uses live check-ins</p>
+              <p className="text-xs leading-5 text-[#9AA1AE]">Confirmed attendance records by week</p>
             </div>
             <span className="text-xs font-semibold px-2 py-1 rounded bg-[#1A1D26] text-[#B9BEC7] border border-[#262A36]">
               Mon - Thu
@@ -205,13 +190,13 @@ export const Dashboard: React.FC = () => {
                 <div className="flex justify-between text-xs mb-1.5 font-medium">
                   <span className="text-[#F5F6F8]">Active Members</span>
                   <span className="text-[#9AA1AE] tabular-nums">
-                    {metrics?.activeMembers || 0} / {getGoal('active_members')}
+                    {metrics?.activeMembers ?? 0} / {getGoal('active_members')}
                   </span>
                 </div>
                 <div className="w-full h-2.5 bg-[#1A1D26] rounded-full overflow-hidden border border-[#262A36]">
                   <div
                     className="h-full bg-gradient-to-r from-[#DA0E19] to-[#F0202C] rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, Math.round(((metrics?.activeMembers || 0) / getGoal('active_members')) * 100))}%` }}
+                    style={{ width: `${Math.min(100, Math.round(((metrics?.activeMembers ?? 0) / getGoal('active_members')) * 100))}%` }}
                   />
                 </div>
               </div>
@@ -221,13 +206,13 @@ export const Dashboard: React.FC = () => {
                 <div className="flex justify-between text-xs mb-1.5 font-medium">
                   <span className="text-[#F5F6F8]">Attendance Rate</span>
                   <span className="text-[#9AA1AE] tabular-nums">
-                    {metrics?.showUpRatePct || 0}% / {getGoal('attendance_rate')}%
+                    {metrics?.showUpRatePct ?? 0}% / {getGoal('attendance_rate')}%
                   </span>
                 </div>
                 <div className="w-full h-2.5 bg-[#1A1D26] rounded-full overflow-hidden border border-[#262A36]">
                   <div
                     className="h-full bg-gradient-to-r from-[#DA0E19] to-[#F0202C] rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, Math.round(((metrics?.showUpRatePct || 0) / getGoal('attendance_rate')) * 100))}%` }}
+                    style={{ width: `${Math.min(100, Math.round(((metrics?.showUpRatePct ?? 0) / getGoal('attendance_rate')) * 100))}%` }}
                   />
                 </div>
               </div>
@@ -237,13 +222,13 @@ export const Dashboard: React.FC = () => {
                 <div className="flex justify-between text-xs mb-1.5 font-medium">
                   <span className="text-[#F5F6F8]">Monthly Revenue</span>
                   <span className="text-[#9AA1AE] tabular-nums">
-                    UGX {((metrics?.revenueMtdUgx || 0) / 1000).toFixed(0)}k / {(getGoal('monthly_revenue') / 1000).toFixed(0)}k
+                    UGX {((metrics?.revenueMtdUgx ?? 0) / 1000).toFixed(0)}k / {(getGoal('monthly_revenue') / 1000).toFixed(0)}k
                   </span>
                 </div>
                 <div className="w-full h-2.5 bg-[#1A1D26] rounded-full overflow-hidden border border-[#262A36]">
                   <div
                     className="h-full bg-gradient-to-r from-[#DA0E19] to-[#F0202C] rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(100, Math.round(((metrics?.revenueMtdUgx || 0) / getGoal('monthly_revenue')) * 100))}%` }}
+                    style={{ width: `${Math.min(100, Math.round(((metrics?.revenueMtdUgx ?? 0) / getGoal('monthly_revenue')) * 100))}%` }}
                   />
                 </div>
               </div>
@@ -269,10 +254,10 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div>
               <h3 className="font-bold font-heading text-[#F5F6F8]">Revenue Trend (UGX)</h3>
-              <p className="text-xs leading-5 text-[#9AA1AE]">Illustrative history; latest month uses live MTD revenue</p>
+              <p className="text-xs leading-5 text-[#9AA1AE]">Confirmed payments by month</p>
             </div>
             <span className="text-[11px] font-semibold px-2 py-1 rounded bg-[#1A1D26] text-[#B9BEC7] border border-[#262A36]">
-              Illustrative history
+              Confirmed payments
             </span>
           </div>
           <div className="h-64 sm:h-72 w-full min-w-0">
@@ -306,7 +291,7 @@ export const Dashboard: React.FC = () => {
                 Hub Action Alerts
               </h3>
               <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                {(metrics?.expiredCount || 0) + (metrics?.stoppedComingCount || 0) + unresolvedEquipment.length} Action Items
+                {(metrics?.expiredCount ?? 0) + (metrics?.stoppedComingCount ?? 0) + unresolvedEquipment.length} Action Items
               </span>
             </div>
 
