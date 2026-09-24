@@ -61,7 +61,7 @@ export const Members: React.FC = () => {
   return (
     <AdminLayout title="Members Directory">
       {/* Action Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[#12141B] border border-[#262A36] rounded-[12px] p-4 sm:p-5">
+      <div className="sticky top-0 z-20 flex flex-col lg:flex-row lg:items-center justify-between gap-4 rounded-[12px] border border-[#262A36] bg-[#12141B]/95 p-4 shadow-lg backdrop-blur sm:p-5">
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-bold font-heading text-[#F5F6F8]">All Registered Athletes</h2>
