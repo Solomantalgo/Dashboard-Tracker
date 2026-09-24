@@ -42,6 +42,9 @@ export const MemberProfile: React.FC = () => {
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteResult, setInviteResult] = useState<{ success: boolean; tempPassword?: string } | null>(null);
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetResult, setResetResult] = useState<{ success: boolean; tempPassword?: string } | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   const loadData = async () => {
     if (!id) return;
@@ -140,6 +143,20 @@ export const MemberProfile: React.FC = () => {
       await loadData();
     } catch (err) {
       console.error('Revoke access failed:', err);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!member) return;
+    setActionLoading(true);
+    setResetError(null);
+    try {
+      const res = await api.resetClientPassword(member.id);
+      setResetResult(res);
+    } catch (err: any) {
+      setResetError(err?.message || 'Unable to reset the member password.');
     } finally {
       setActionLoading(false);
     }
@@ -306,7 +323,7 @@ export const MemberProfile: React.FC = () => {
           </div>
 
           {member.user_id ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                 <CheckCircle className="w-3.5 h-3.5" /> Portal Access Active
               </span>
@@ -316,6 +333,17 @@ export const MemberProfile: React.FC = () => {
                 className="px-3 py-1 rounded-lg text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20"
               >
                 Revoke Access
+              </button>
+              <button
+                onClick={() => {
+                  setResetError(null);
+                  setResetResult(null);
+                  setIsResetOpen(true);
+                }}
+                disabled={actionLoading}
+                className="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20"
+              >
+                Reset Password
               </button>
             </div>
           ) : (
@@ -614,6 +642,64 @@ export const MemberProfile: React.FC = () => {
       )}
 
       {/* Invite Modal */}
+      {isResetOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#12141B] border border-amber-500/30 rounded-2xl p-6 w-full max-w-md space-y-4">
+            <h3 className="text-lg font-bold text-[#F5F6F8]">Reset Member Password</h3>
+
+            {resetError && (
+              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                {resetError}
+              </div>
+            )}
+
+            {!resetResult ? (
+              <>
+                <p className="text-xs text-[#9AA1AE] leading-relaxed">
+                  This will invalidate {member.full_name}'s current password and generate a new temporary password. Continue?
+                </p>
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    onClick={() => setIsResetOpen(false)}
+                    className="px-4 py-2 rounded-lg border border-[#262A36] text-xs text-[#9AA1AE] hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleResetPassword}
+                    disabled={actionLoading}
+                    className="px-4 py-2 rounded-lg bg-amber-500 text-black text-xs font-bold hover:bg-amber-400 disabled:opacity-50"
+                  >
+                    {actionLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-3 text-xs">
+                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 shrink-0" />
+                  <span>Password reset successfully.</span>
+                </div>
+                <div className="p-4 bg-[#1A1D26] border border-[#262A36] rounded-xl space-y-1">
+                  <span className="text-[#9AA1AE] text-[10px] uppercase font-bold">New Temporary Password:</span>
+                  <div className="font-mono text-lg font-bold text-white tracking-widest select-all">{resetResult.tempPassword}</div>
+                  <p className="text-[10px] text-[#9AA1AE]">Hand this password directly to the member. Their previous password is no longer valid.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsResetOpen(false);
+                    setResetResult(null);
+                  }}
+                  className="w-full py-2 bg-[#DA0E19] text-white font-bold rounded-lg"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {isInviteOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#12141B] border border-[#262A36] rounded-2xl p-6 w-full max-w-md space-y-4">

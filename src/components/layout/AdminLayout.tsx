@@ -88,7 +88,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
         </NavLink>
 
         <NavLink
-          to="/settings"
+          to="/more"
           className={({ isActive }) =>
             `flex flex-col items-center gap-0.5 p-2 rounded-lg text-[10px] font-medium transition-colors ${
               isActive ? 'text-[#DA0E19]' : 'text-[#9AA1AE]'

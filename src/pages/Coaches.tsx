@@ -28,6 +28,9 @@ export const Coaches: React.FC = () => {
   const [inviteCoach, setInviteCoach] = useState<Coach | null>(null);
   const [coachEmail, setCoachEmail] = useState('');
   const [inviteResult, setInviteResult] = useState<{ success: boolean; tempPassword?: string } | null>(null);
+  const [resetCoach, setResetCoach] = useState<Coach | null>(null);
+  const [resetResult, setResetResult] = useState<{ success: boolean; tempPassword?: string } | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const loadData = async () => {
@@ -111,6 +114,20 @@ export const Coaches: React.FC = () => {
     }
   };
 
+  const handleResetCoachPassword = async () => {
+    if (!resetCoach) return;
+    setActionLoading(true);
+    setResetError(null);
+    try {
+      const res = await api.resetCoachPassword(resetCoach.id);
+      setResetResult(res);
+    } catch (err: any) {
+      setResetError(err?.message || 'Unable to reset the coach password.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <AdminLayout title="Coaches Management & Reviews">
       <div className="flex justify-between items-center bg-[#12141B] border border-[#262A36] rounded-[12px] p-4">
@@ -161,7 +178,7 @@ export const Coaches: React.FC = () => {
               {/* Bug 5: Coach Portal Invitation Flow */}
               <div className="pt-3 border-t border-[#262A36] flex items-center justify-between text-xs">
                 {c.user_id ? (
-                  <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center justify-between gap-2 flex-wrap w-full">
                     <span className="text-emerald-400 font-bold flex items-center gap-1">
                       <CheckCircle className="w-3.5 h-3.5" /> Portal Active
                     </span>
@@ -171,6 +188,17 @@ export const Coaches: React.FC = () => {
                       className="px-2.5 py-1 rounded bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20"
                     >
                       Revoke
+                    </button>
+                    <button
+                      onClick={() => {
+                        setResetCoach(c);
+                        setResetResult(null);
+                        setResetError(null);
+                      }}
+                      disabled={actionLoading}
+                      className="px-2.5 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20"
+                    >
+                      Reset password
                     </button>
                   </div>
                 ) : (
@@ -292,6 +320,62 @@ export const Coaches: React.FC = () => {
               )}
 
               <button onClick={() => setInviteCoach(null)} className="w-full py-2 bg-[#DA0E19] text-white font-bold rounded-lg">
+                Done
+              </button>
+            </div>
+          )}
+        </Modal>
+      )}
+
+      {resetCoach && (
+        <Modal isOpen={Boolean(resetCoach)} onClose={() => setResetCoach(null)} title={`Reset Password: ${resetCoach.full_name}`}>
+          {resetError && (
+            <div className="mb-3 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+              {resetError}
+            </div>
+          )}
+
+          {!resetResult ? (
+            <div className="space-y-4 text-xs">
+              <p className="text-[#9AA1AE] leading-relaxed">
+                This will invalidate the coach's current password and generate a new temporary password. Continue?
+              </p>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setResetCoach(null)}
+                  className="px-3 py-1.5 bg-[#1A1D26] rounded text-[#9AA1AE]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetCoachPassword}
+                  disabled={actionLoading}
+                  className="px-4 py-1.5 text-xs font-bold bg-amber-500 text-black rounded disabled:opacity-50"
+                >
+                  {actionLoading ? 'Resetting...' : 'Reset password'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3 text-xs">
+              <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 shrink-0" />
+                <span>Password reset successfully.</span>
+              </div>
+              <div className="p-4 bg-[#1A1D26] border border-[#262A36] rounded-xl space-y-1">
+                <span className="text-[#9AA1AE] text-[10px] uppercase font-bold">New Temporary Password:</span>
+                <div className="font-mono text-lg font-bold text-white tracking-widest select-all">{resetResult.tempPassword}</div>
+                <p className="text-[10px] text-[#9AA1AE]">Hand this password directly to the coach. Their previous password is no longer valid.</p>
+              </div>
+              <button
+                onClick={() => {
+                  setResetCoach(null);
+                  setResetResult(null);
+                }}
+                className="w-full py-2 bg-[#DA0E19] text-white font-bold rounded-lg"
+              >
                 Done
               </button>
             </div>

@@ -935,6 +935,19 @@ export const api = {
     return { success: true, tempPassword };
   },
 
+  async resetClientPassword(clientId: string): Promise<{ success: boolean; tempPassword?: string }> {
+    const tempPassword = `Pffi#${Math.random().toString(36).slice(-6)}`;
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { action: 'reset', targetType: 'client', targetId: clientId }
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Unable to reset the member password.');
+      return data;
+    }
+    return { success: true, tempPassword };
+  },
+
   async revokeClientPortalAccess(clientId: string): Promise<void> {
     if (isSupabaseConfigured && supabase) {
       const { data: c } = await supabase.from('clients').select('user_id').eq('id', clientId).single();
@@ -970,6 +983,19 @@ export const api = {
     if (ch) ch.user_id = mockUserId;
     local.save();
 
+    return { success: true, tempPassword };
+  },
+
+  async resetCoachPassword(coachId: string): Promise<{ success: boolean; tempPassword?: string }> {
+    const tempPassword = `Coach#${Math.random().toString(36).slice(-6)}`;
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.functions.invoke('invite-user', {
+        body: { action: 'reset', targetType: 'coach', targetId: coachId }
+      });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Unable to reset the coach password.');
+      return data;
+    }
     return { success: true, tempPassword };
   },
 

@@ -54,6 +54,8 @@ supabase functions deploy invite-user
 
 The function verifies the caller is an authenticated admin, creates a confirmed Auth user with a one-time temporary password, and links `user_roles` plus the target member or coach record server-side. The service-role key is used only inside the function and must never be placed in the frontend `.env`.
 
+Admins can also reset the password for an existing portal account from the member profile or coach record. The reset invalidates the old password and displays a new temporary password; no password is stored. Reset is rejected when portal access has not been invited yet.
+
 ### 3. Local Development
 
 Install dependencies and start the Vite dev server:
@@ -125,3 +127,4 @@ No RLS/Auth query results are claimed here: this pass had no real test users, so
 - Read-only live check on the configured Supabase project returned HTTP 200 and 0 rows for `clients`, `coaches`, `plans`, `payments`, `sessions`, `attendance`, `assessments`, `transactions`, `coach_reviews`, `content_posts`, `equipment_needs`, and `targets`.
 - No writes or UI clicks were performed because this workspace does not establish that the configured project is disposable, no admin test credentials are available, and browser automation is unavailable. Adding rows, empty-state rendering, UUID coach selection, and wrong-key console behavior remain unverified.
 - Portal controls/layout fix: member identity/admin controls are explicit-demo-only, authenticated client/coach rows are authoritative for real sessions, and both portals use mobile bottom navigation plus desktop/tablet side rails and wider content containers. Real-user login and visual checks at 375px, 768px, and 1440px remain unverified.
+- Password reset: member and coach reset actions call the server-side Edge Function, show confirmation/success/error UI, and keep plaintext passwords transient only. Live old/new password testing remains unverified because the function has not been deployed here.

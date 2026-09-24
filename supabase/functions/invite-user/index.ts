@@ -50,23 +50,45 @@ Deno.serve(async request => {
   if (roleError) return json({ error: 'Unable to verify administrator access.' }, 500);
   if (!adminRole) return json({ error: 'Administrator access required.' }, 403);
 
-  let body: { email?: string; targetType?: string; targetId?: string };
+  let body: { action?: string; email?: string; targetType?: string; targetId?: string };
   try {
     body = await request.json();
   } catch {
     return json({ error: 'Request body must be valid JSON.' }, 400);
   }
 
+  const action = body.action || 'invite';
   const email = body.email?.trim().toLowerCase();
   const targetType = body.targetType;
   const targetId = body.targetId;
-  if (!email || !email.includes('@') || !targetId || (targetType !== 'client' && targetType !== 'coach')) {
-    return json({ error: 'email, targetType, and targetId are required.' }, 400);
+  if (!targetId || (targetType !== 'client' && targetType !== 'coach') || (action !== 'invite' && action !== 'reset')) {
+    return json({ error: 'targetType, targetId, and a valid action are required.' }, 400);
   }
 
   const table = targetType === 'client' ? 'clients' : 'coaches';
   const role = targetType === 'client' ? 'client' : 'coach';
   const password = generateTempPassword(targetType === 'client' ? 'Pffi' : 'Coach');
+
+  if (action === 'reset') {
+    const { data: target, error: targetError } = await adminClient
+      .from(table)
+      .select('user_id')
+      .eq('id', targetId)
+      .maybeSingle();
+    if (targetError) return json({ error: 'Unable to look up portal access.' }, 500);
+    if (!target) return json({ error: 'The target record was not found.' }, 404);
+    if (!target.user_id) return json({ error: 'This person has no portal access yet. Invite them first.' }, 400);
+
+    const { error: resetError } = await adminClient.auth.admin.updateUserById(target.user_id, {
+      password
+    });
+    if (resetError) return json({ error: resetError.message }, resetError.status || 400);
+    return json({ success: true, tempPassword: password });
+  }
+
+  if (!email || !email.includes('@')) {
+    return json({ error: 'email is required for an invite.' }, 400);
+  }
 
   const { data: authData, error: createError } = await adminClient.auth.admin.createUser({
     email,

@@ -13,6 +13,7 @@ import { Coaches } from './pages/Coaches';
 import { ContentTracker } from './pages/ContentTracker';
 import { Equipment } from './pages/Equipment';
 import { Settings } from './pages/Settings';
+import { MoreMenu } from './pages/MoreMenu';
 import { MemberPortal } from './pages/portal/MemberPortal';
 import { CoachPortal } from './pages/coach/CoachPortal';
 
@@ -57,6 +58,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/content" element={<ContentTracker />} />
           <Route path="/equipment" element={<Equipment />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/more" element={<MoreMenu />} />
         </>
       )}
 

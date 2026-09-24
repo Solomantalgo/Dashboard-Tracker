@@ -47,6 +47,10 @@ This document logs key design choices, assumptions, and simple sensible defaults
 
 Deploy with `supabase functions deploy invite-user`. Supabase supplies `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` inside the Edge Function environment; none belong in the frontend `.env`. The function has not been deployed or live-tested in this environment.
 
+### Portal Password Reset
+
+The same `invite-user` Edge Function accepts `action = 'reset'` for an already-linked client or coach. It verifies the caller as an admin, reads the linked `user_id`, calls `auth.admin.updateUserById` with a newly generated temporary password, and returns that password without storing it. Resetting an uninvited person returns an explicit "Invite them first" error. Live password rotation and old/new credential testing remain unverified until the function is deployed.
+
 ---
 
 ## Verification status (2026-09-23)
