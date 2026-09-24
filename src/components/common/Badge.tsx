@@ -20,7 +20,7 @@ export const Badge: React.FC<BadgeProps> = ({ status, label, className = '' }) =
     case 'expired':
     case 'failed':
       return (
-        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 ${className}`}>
+        <span role="status" aria-label={label || (status === 'failed' ? 'Failed' : 'Expired')} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${status === 'failed' ? 'border border-rose-500/25 bg-rose-500/10 text-rose-300' : 'border border-amber-500/20 bg-amber-500/10 text-amber-400'} ${className}`}>
           <AlertCircle className="w-3 h-3" />
           {label || (status === 'failed' ? 'Failed' : 'Expired')}
         </span>
@@ -28,7 +28,7 @@ export const Badge: React.FC<BadgeProps> = ({ status, label, className = '' }) =
     case 'due_soon':
     case 'pending':
       return (
-        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30 ${className}`}>
+        <span role="status" aria-label={label || (status === 'pending' ? 'Pending Online' : 'Due Soon')} className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30 ${className}`}>
           <Clock className="w-3 h-3" />
           {label || (status === 'pending' ? 'Pending Online' : 'Due Soon')}
         </span>

@@ -46,7 +46,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Quick Action Buttons for Admin */}
         {role === 'admin' && (
-          <div className="flex items-center gap-2">
+          <div className="hidden items-center gap-2 sm:flex">
             <button
               onClick={() => {
                 if (onStartSession) onStartSession();

@@ -81,7 +81,7 @@ export const Assessments: React.FC = () => {
           className="px-4 py-2 text-xs font-bold rounded-lg bg-[#DA0E19] text-white hover:bg-[#F0202C] flex items-center gap-1.5 shadow-md shadow-[#DA0E19]/20"
         >
           <Plus className="w-4 h-4" />
-          + Log New Assessment
+          Log New Assessment
         </button>
       </div>
 
@@ -98,7 +98,7 @@ export const Assessments: React.FC = () => {
       </div>
 
       {/* Directory Table */}
-      <div className="bg-[#12141B] border border-[#262A36] rounded-[12px] overflow-hidden shadow-xl">
+      <div className="hidden overflow-hidden rounded-[12px] border border-[#262A36] bg-[#12141B] shadow-xl md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-[#1A1D26] text-[#9AA1AE] uppercase text-[10px] font-bold border-b border-[#262A36]">
@@ -168,6 +168,63 @@ export const Assessments: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Mobile assessment cards */}
+      <div className="space-y-3 pb-8 md:hidden">
+        {filtered.map(({ member, latest, isDue }) => (
+          <article key={member.id} className="min-w-0 overflow-hidden rounded-[12px] border border-[#262A36] bg-[#12141B] p-4 shadow-lg">
+            <div className="flex min-w-0 flex-col items-start gap-2 border-b border-[#262A36] pb-3 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+              <div className="min-w-0">
+                <h3 className="truncate text-sm font-bold text-[#F5F6F8]">{member.full_name}</h3>
+                <p className="mt-1 font-mono text-[11px] text-[#9AA1AE]">{member.member_code}</p>
+              </div>
+              {latest ? (
+                isDue ? (
+                  <span className="shrink-0 rounded border border-amber-500/30 bg-amber-500/20 px-2 py-1 text-[10px] font-bold text-amber-400">Assessment due</span>
+                ) : (
+                  <span className="shrink-0 rounded border border-emerald-500/30 bg-emerald-500/20 px-2 py-1 text-[10px] font-bold text-emerald-400">Up to date</span>
+                )
+              ) : (
+                <span className="shrink-0 rounded border border-rose-500/30 bg-rose-500/15 px-2 py-1 text-[10px] font-bold text-rose-300">Assessment needed</span>
+              )}
+            </div>
+
+            <div className="mt-3 flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#9AA1AE]">Last assessed</span>
+              <span className="text-xs font-mono text-[#F5F6F8]">{latest ? latest.assessed_on : 'Never assessed'}</span>
+            </div>
+
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 border-t border-[#262A36] pt-3 text-xs">
+              <div>
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-[#9AA1AE]">Pushups</dt>
+                <dd className="mt-1 font-bold text-[#F5F6F8]">{latest?.pushups !== undefined ? `${latest.pushups} reps` : '-'}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-[#9AA1AE]">Plank</dt>
+                <dd className="mt-1 font-bold text-[#F5F6F8]">{latest?.plank_seconds !== undefined ? `${latest.plank_seconds} s` : '-'}</dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-[#9AA1AE]">1km run</dt>
+                <dd className="mt-1 font-bold text-[#F5F6F8]">
+                  {latest?.run_time_seconds !== undefined ? `${Math.floor(latest.run_time_seconds / 60)}:${String(latest.run_time_seconds % 60).padStart(2, '0')} min` : '-'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[10px] font-bold uppercase tracking-wider text-[#9AA1AE]">BMI</dt>
+                <dd className="mt-1 font-bold text-amber-400">{latest?.bmi !== undefined ? latest.bmi : '-'}</dd>
+              </div>
+            </dl>
+
+            <button
+              type="button"
+              onClick={() => navigate(`/members/${member.id}`)}
+              className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-[#262A36] bg-[#1A1D26] px-3 py-2 text-xs font-bold text-[#DA0E19] hover:border-[#DA0E19]"
+            >
+              View history
+            </button>
+          </article>
+        ))}
       </div>
 
       <NewAssessmentModal

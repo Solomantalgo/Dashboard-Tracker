@@ -37,7 +37,9 @@ export const Dashboard: React.FC = () => {
       const [mRes, tRes, clRes, eqRes, chartsRes] = await Promise.all([
         api.getDashboardMetrics(),
         api.getTargets(),
-        api.getMembers(),
+        // Include inactive members for the alerts panel; KPI calculations still
+        // come from getDashboardMetrics(), which counts active members only.
+        api.getMembers(true),
         api.getEquipmentNeeds(),
         api.getDashboardChartData()
       ]);
@@ -64,8 +66,16 @@ export const Dashboard: React.FC = () => {
   const revenueChartData = chartData.revenue;
 
   // At-risk and expired member lists for alerts
-  const expiredMembers = members.filter(m => (m as any).membership_status === 'expired' || (m as any).membership_status === 'never_paid');
-  const stoppedComingMembers = members.filter(m => (m as any).show_up_rate_pct !== undefined && (m as any).show_up_rate_pct < 40);
+  const expiredMembers = members.filter(m => m.status === 'active' && ((m as any).membership_status === 'expired' || (m as any).membership_status === 'never_paid'));
+  const expiringSoonMembers = members.filter(m => {
+    const status = (m as any).membership_status;
+    const expiresOn = (m as any).expires_on;
+    if (m.status !== 'active' || status !== 'active' || !expiresOn) return false;
+    const daysUntil = Math.ceil((new Date(`${expiresOn}T00:00:00`).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+    return daysUntil >= 0 && daysUntil <= 7;
+  });
+  const stoppedComingMembers = members.filter(m => m.status === 'active' && (m as any).show_up_rate_pct !== undefined && (m as any).show_up_rate_pct < 40);
+  const inactiveMembers = members.filter(m => m.status === 'inactive');
   const unresolvedEquipment = equipment.filter(e => !e.resolved);
 
   return (
@@ -145,7 +155,7 @@ export const Dashboard: React.FC = () => {
         <KpiCard
           title="Outstanding Due"
           value={`UGX ${(metrics?.outstandingUgx ?? 0).toLocaleString()}`}
-          subtitle={`${(metrics?.expiredCount ?? 0)} expired or unpaid`}
+          subtitle={`${expiredMembers.length} expired or unpaid · ${expiringSoonMembers.length} expiring soon`}
           icon={AlertTriangle}
         />
       </div>
@@ -291,7 +301,7 @@ export const Dashboard: React.FC = () => {
                 Hub Action Alerts
               </h3>
               <span className="text-xs font-bold px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                {(metrics?.expiredCount ?? 0) + (metrics?.stoppedComingCount ?? 0) + unresolvedEquipment.length} Action Items
+                {expiredMembers.length + expiringSoonMembers.length + stoppedComingMembers.length + inactiveMembers.length + unresolvedEquipment.length} Action Items
               </span>
             </div>
 
@@ -317,6 +327,27 @@ export const Dashboard: React.FC = () => {
                 </div>
               ))}
 
+              {/* Expiring Soon */}
+              {expiringSoonMembers.slice(0, 3).map(m => (
+                <div key={m.id} className="p-3 rounded-lg bg-[#1A1D26] border border-amber-500/20 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-full bg-amber-500/10 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0">
+                      {m.full_name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-[#F5F6F8] truncate">{m.full_name}</h4>
+                      <p className="text-[11px] leading-4 text-amber-300 font-medium">Expiring within 7 days</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setIsRecordPaymentOpen(true)}
+                    className="min-h-9 px-3 py-2 rounded text-[11px] font-bold bg-amber-500/15 text-amber-200 hover:bg-amber-500/25 shrink-0"
+                  >
+                    Remind
+                  </button>
+                </div>
+              ))}
+
               {/* Stopped Coming */}
               {stoppedComingMembers.slice(0, 2).map(m => (
                 <div key={m.id} className="p-3 rounded-lg bg-[#1A1D26] border border-[#262A36] flex items-start justify-between gap-3">
@@ -327,6 +358,27 @@ export const Dashboard: React.FC = () => {
                     <div className="min-w-0">
                       <h4 className="text-xs font-bold text-[#F5F6F8] truncate">{m.full_name}</h4>
                       <p className="text-[11px] leading-4 text-rose-400 font-medium">Low Attendance (&lt;40%)</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => navigate(`/members/${m.id}`)}
+                    className="min-h-9 px-3 py-2 rounded text-[11px] font-bold bg-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] shrink-0"
+                  >
+                    View
+                  </button>
+                </div>
+              ))}
+
+              {/* Inactive Members */}
+              {inactiveMembers.slice(0, 3).map(m => (
+                <div key={m.id} className="p-3 rounded-lg bg-[#1A1D26] border border-slate-500/20 flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-7 h-7 rounded-full bg-slate-500/15 text-slate-300 font-bold text-xs flex items-center justify-center shrink-0">
+                      {m.full_name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-bold text-[#F5F6F8] truncate">{m.full_name}</h4>
+                      <p className="text-[11px] leading-4 text-slate-300 font-medium">Inactive — review</p>
                     </div>
                   </div>
                   <button

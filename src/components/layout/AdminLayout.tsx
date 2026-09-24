@@ -18,7 +18,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   onStartSession
 }) => {
   return (
-    <div className="flex w-full min-w-0 h-screen bg-[#0A0B10] overflow-hidden">
+    <div className="flex h-screen w-full min-w-0 overflow-hidden bg-[#0A0B10]">
       {/* Desktop Sidebar */}
       <Sidebar />
 
@@ -30,8 +30,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           onStartSession={onStartSession}
         />
         
-        <main className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 md:pb-8">
-          <div className="w-full min-w-0 max-w-[1280px] mx-auto space-y-6">
+        <main className="w-full min-w-0 max-w-full flex-1 overflow-x-hidden overflow-y-auto p-4 pb-20 sm:p-6 lg:p-8 md:pb-8">
+          <div className="mx-auto w-full min-w-0 max-w-[calc(100vw-2rem)] space-y-6 lg:max-w-[1280px]">
             {children}
           </div>
         </main>
