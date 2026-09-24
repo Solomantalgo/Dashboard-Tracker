@@ -19,9 +19,8 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   trendPositive
 }) => {
   return (
-    <div className="relative overflow-hidden rounded-[12px] bg-[#12141B] border border-[#262A36] p-5 shadow-lg group hover:border-[#DA0E19]/40 transition-all duration-200">
-      {/* Thin red accent line on KPI cards */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#DA0E19] via-[#F0202C] to-transparent opacity-80" />
+    <div className="relative h-full min-h-[148px] overflow-hidden rounded-[12px] bg-[#12141B] border border-[#262A36] p-5 shadow-lg group hover:border-[#DA0E19]/40 transition-all duration-200 flex flex-col">
+      <div className="absolute top-0 left-0 right-0 h-px bg-[#3A3E4A] group-hover:bg-[#DA0E19] transition-colors" />
       
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-semibold uppercase tracking-wider text-[#9AA1AE]">{title}</span>
@@ -30,19 +29,19 @@ export const KpiCard: React.FC<KpiCardProps> = ({
         </div>
       </div>
 
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-end justify-between gap-3 flex-1">
         <h3 className="text-2xl sm:text-3xl font-bold font-heading text-[#F5F6F8] tabular-nums tracking-tight">
           {value}
         </h3>
         {trend && (
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded ${trendPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
+          <span className={`text-[11px] font-semibold px-2 py-1 rounded-md ${trendPositive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'}`}>
             {trend}
           </span>
         )}
       </div>
 
       {subtitle && (
-        <p className="mt-1 text-xs text-[#9AA1AE] truncate">{subtitle}</p>
+        <p className="mt-2 min-h-[30px] text-xs leading-5 text-[#9AA1AE]">{subtitle}</p>
       )}
     </div>
   );

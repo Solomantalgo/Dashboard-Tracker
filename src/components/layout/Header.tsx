@@ -24,7 +24,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-[#0A0B10]/90 backdrop-blur-md border-b border-[#262A36] px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-30 min-w-0 overflow-hidden bg-[#0A0B10]/90 backdrop-blur-md border-b border-[#262A36] px-4 sm:px-8 py-3 flex items-center justify-between gap-4">
       <div className="flex items-center gap-3">
         <h1 className="text-xl sm:text-2xl font-extrabold font-heading text-[#F5F6F8] tracking-tight">
           {title}

@@ -90,39 +90,39 @@ export const Dashboard: React.FC = () => {
       onStartSession={() => navigate('/attendance')}
     >
       {/* Quick Actions Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 p-4 bg-[#12141B] border border-[#262A36] rounded-[12px]">
-        <div className="flex items-center gap-2">
+      <div className="w-full min-w-0 p-4 sm:p-5 bg-[#12141B] border border-[#262A36] rounded-[12px] space-y-4">
+        <div className="flex items-center gap-2 min-w-0">
           <div className="w-2.5 h-2.5 rounded-full bg-[#DA0E19] animate-ping" />
-          <span className="text-xs font-bold text-[#F5F6F8] tracking-wide uppercase">
+          <span className="min-w-0 text-xs font-bold text-[#F5F6F8] tracking-wide uppercase leading-5">
             Kampala Safe Fields • Today's Workout Active
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid min-w-0 grid-cols-2 sm:flex sm:flex-wrap items-stretch gap-2">
           <button
             onClick={() => navigate('/attendance')}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#DA0E19] text-white hover:bg-[#F0202C] transition-all flex items-center gap-1.5 shadow-md shadow-[#DA0E19]/20"
+            className="min-w-0 min-h-11 px-3 py-2 rounded-lg text-xs font-bold bg-[#DA0E19] text-white hover:bg-[#F0202C] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-[#DA0E19]/20 sm:min-h-0"
           >
             <CalendarCheck className="w-4 h-4" />
             Start Session
           </button>
           <button
             onClick={() => setIsRecordPaymentOpen(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] transition-all flex items-center gap-1.5"
+            className="min-w-0 min-h-11 px-3 py-2 rounded-lg text-xs font-semibold bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] transition-all flex items-center justify-center gap-1.5 sm:min-h-0"
           >
             <CreditCard className="w-4 h-4 text-[#DA0E19]" />
             Record Payment
           </button>
           <button
             onClick={() => setIsAddMemberOpen(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] transition-all flex items-center gap-1.5"
+            className="min-w-0 min-h-11 px-3 py-2 rounded-lg text-xs font-semibold bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] transition-all flex items-center justify-center gap-1.5 sm:min-h-0"
           >
             <UserPlus className="w-4 h-4 text-[#DA0E19]" />
             Add Member
           </button>
           <button
             onClick={() => setIsNewAssessmentOpen(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] transition-all flex items-center gap-1.5"
+            className="min-w-0 min-h-11 px-3 py-2 rounded-lg text-xs font-semibold bg-[#1A1D26] border border-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] transition-all flex items-center justify-center gap-1.5 sm:min-h-0"
           >
             <Activity className="w-4 h-4 text-[#DA0E19]" />
             New Assessment
@@ -131,14 +131,12 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="w-full min-w-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-stretch">
         <KpiCard
           title="Active Members"
           value={metrics?.activeMembers || 0}
           subtitle={`Target: ${getGoal('active_members')} members`}
           icon={Users}
-          trend="+3 this mo"
-          trendPositive={true}
         />
         <KpiCard
           title="Check-ins This Wk"
@@ -168,26 +166,26 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Analytics & Targets Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="w-full min-w-0 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Attendance Chart (2 Cols) */}
-        <div className="lg:col-span-2 bg-[#12141B] border border-[#262A36] rounded-[12px] p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-2 min-w-0 overflow-hidden bg-[#12141B] border border-[#262A36] rounded-[12px] p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div>
               <h3 className="font-bold font-heading text-[#F5F6F8]">Attendance Trends</h3>
-              <p className="text-xs text-[#9AA1AE]">Total check-ins across weekly outdoor sessions (Last 8 Weeks)</p>
+              <p className="text-xs leading-5 text-[#9AA1AE]">Illustrative history; latest week uses live check-ins</p>
             </div>
             <span className="text-xs font-semibold px-2 py-1 rounded bg-[#1A1D26] text-[#B9BEC7] border border-[#262A36]">
               Mon - Thu
             </span>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-64 sm:h-72 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={attendanceChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#262A36" vertical={false} />
-                <XAxis dataKey="week" stroke="#9AA1AE" fontSize={12} tickLine={false} />
-                <YAxis stroke="#9AA1AE" fontSize={12} tickLine={false} />
+                <XAxis dataKey="week" stroke="#9AA1AE" fontSize={11} tickLine={false} />
+                <YAxis stroke="#9AA1AE" fontSize={11} tickLine={false} width={30} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1A1D26', borderColor: '#262A36', borderRadius: '8px', color: '#F5F6F8' }}
+                  contentStyle={{ backgroundColor: '#1A1D26', borderColor: '#3A3E4A', borderRadius: '8px', color: '#F5F6F8', fontSize: '12px' }}
                 />
                 <Bar dataKey="attended" fill="#DA0E19" radius={[4, 4, 0, 0]} name="Check-ins" />
               </BarChart>
@@ -196,7 +194,7 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Weekly Targets Widget (1 Col) */}
-        <div className="bg-[#12141B] border border-[#262A36] rounded-[12px] p-5 flex flex-col justify-between">
+        <div className="min-w-0 bg-[#12141B] border border-[#262A36] rounded-[12px] p-4 sm:p-5 flex flex-col">
           <div>
             <h3 className="font-bold font-heading text-[#F5F6F8] mb-1">Weekly Targets</h3>
             <p className="text-xs text-[#9AA1AE] mb-5">Current performance vs business owner goals</p>
@@ -252,7 +250,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-[#262A36] flex items-center justify-between text-xs">
+          <div className="mt-6 pt-4 border-t border-[#262A36] flex flex-wrap items-center justify-between gap-2 text-xs">
             <span className="text-[#9AA1AE]">Configured in Settings</span>
             <button
               onClick={() => navigate('/settings')}
@@ -265,19 +263,19 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Revenue & Alerts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="w-full min-w-0 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start pb-8 md:pb-0">
         {/* Revenue Chart (2 Cols) */}
-        <div className="lg:col-span-2 bg-[#12141B] border border-[#262A36] rounded-[12px] p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-2 min-w-0 overflow-hidden bg-[#12141B] border border-[#262A36] rounded-[12px] p-4 sm:p-5">
+          <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
             <div>
               <h3 className="font-bold font-heading text-[#F5F6F8]">Revenue Trend (UGX)</h3>
-              <p className="text-xs text-[#9AA1AE]">Monthly member payment receipts (Last 6 Months)</p>
+              <p className="text-xs leading-5 text-[#9AA1AE]">Illustrative history; latest month uses live MTD revenue</p>
             </div>
-            <span className="text-xs font-semibold px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              UGX Currency
+            <span className="text-[11px] font-semibold px-2 py-1 rounded bg-[#1A1D26] text-[#B9BEC7] border border-[#262A36]">
+              Illustrative history
             </span>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-64 sm:h-72 w-full min-w-0">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueChartData}>
                 <defs>
@@ -287,11 +285,11 @@ export const Dashboard: React.FC = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#262A36" vertical={false} />
-                <XAxis dataKey="month" stroke="#9AA1AE" fontSize={12} tickLine={false} />
-                <YAxis stroke="#9AA1AE" fontSize={12} tickLine={false} tickFormatter={(v) => `${v / 1000}k`} />
+                <XAxis dataKey="month" stroke="#9AA1AE" fontSize={11} tickLine={false} />
+                <YAxis stroke="#9AA1AE" fontSize={11} width={38} tickLine={false} tickFormatter={(v) => `${v / 1000}k`} />
                 <Tooltip
                   formatter={(val: number) => [`UGX ${val.toLocaleString()}`, 'Revenue']}
-                  contentStyle={{ backgroundColor: '#1A1D26', borderColor: '#262A36', borderRadius: '8px', color: '#F5F6F8' }}
+                  contentStyle={{ backgroundColor: '#1A1D26', borderColor: '#3A3E4A', borderRadius: '8px', color: '#F5F6F8', fontSize: '12px' }}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#DA0E19" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
               </AreaChart>
@@ -300,9 +298,9 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Business Alerts Panel (1 Col) */}
-        <div className="bg-[#12141B] border border-[#262A36] rounded-[12px] p-5 flex flex-col justify-between">
+        <div className="min-w-0 bg-[#12141B] border border-[#262A36] rounded-[12px] p-4 sm:p-5 flex flex-col">
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
               <h3 className="font-bold font-heading text-[#F5F6F8] flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
                 Hub Action Alerts
@@ -315,19 +313,19 @@ export const Dashboard: React.FC = () => {
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
               {/* Expired Memberships */}
               {expiredMembers.slice(0, 3).map(m => (
-                <div key={m.id} className="p-3 rounded-lg bg-[#1A1D26] border border-[#262A36] flex items-center justify-between gap-2">
+                <div key={m.id} className="p-3 rounded-lg bg-[#1A1D26] border border-[#262A36] flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-7 h-7 rounded-full bg-[#262A36] text-[#B9BEC7] font-bold text-xs flex items-center justify-center shrink-0">
                       {m.full_name.substring(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <h4 className="text-xs font-bold text-[#F5F6F8] truncate">{m.full_name}</h4>
-                      <p className="text-[10px] text-amber-400 font-medium">Membership Expired</p>
+                      <p className="text-[11px] leading-4 text-amber-400 font-medium">Membership Expired</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setIsRecordPaymentOpen(true)}
-                    className="px-2 py-1 rounded text-[10px] font-bold bg-[#DA0E19] text-white hover:bg-[#F0202C] shrink-0"
+                    className="min-h-9 px-3 py-2 rounded text-[11px] font-bold bg-[#DA0E19] text-white hover:bg-[#F0202C] shrink-0"
                   >
                     Collect
                   </button>
@@ -336,19 +334,19 @@ export const Dashboard: React.FC = () => {
 
               {/* Stopped Coming */}
               {stoppedComingMembers.slice(0, 2).map(m => (
-                <div key={m.id} className="p-3 rounded-lg bg-[#1A1D26] border border-[#262A36] flex items-center justify-between gap-2">
+                <div key={m.id} className="p-3 rounded-lg bg-[#1A1D26] border border-[#262A36] flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <div className="w-7 h-7 rounded-full bg-[#262A36] text-[#B9BEC7] font-bold text-xs flex items-center justify-center shrink-0">
                       {m.full_name.substring(0, 2).toUpperCase()}
                     </div>
                     <div className="min-w-0">
                       <h4 className="text-xs font-bold text-[#F5F6F8] truncate">{m.full_name}</h4>
-                      <p className="text-[10px] text-rose-400 font-medium">Low Attendance (&lt;40%)</p>
+                      <p className="text-[11px] leading-4 text-rose-400 font-medium">Low Attendance (&lt;40%)</p>
                     </div>
                   </div>
                   <button
                     onClick={() => navigate(`/members/${m.id}`)}
-                    className="px-2 py-1 rounded text-[10px] font-bold bg-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] shrink-0"
+                    className="min-h-9 px-3 py-2 rounded text-[11px] font-bold bg-[#262A36] text-[#F5F6F8] hover:border-[#DA0E19] shrink-0"
                   >
                     View
                   </button>
@@ -357,17 +355,17 @@ export const Dashboard: React.FC = () => {
 
               {/* Equipment Needed */}
               {unresolvedEquipment.slice(0, 2).map(eq => (
-                <div key={eq.id} className="p-3 rounded-lg bg-[#1A1D26] border border-[#262A36] flex items-center justify-between gap-2">
+                <div key={eq.id} className="p-3 rounded-lg bg-[#1A1D26] border border-[#262A36] flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2 min-w-0">
                     <Package className="w-4 h-4 text-amber-400 shrink-0" />
                     <div className="min-w-0">
                       <h4 className="text-xs font-bold text-[#F5F6F8] truncate">{eq.item} ({eq.quantity}x)</h4>
-                      <p className="text-[10px] text-[#9AA1AE]">Wishlist priority: {eq.priority}</p>
+                      <p className="text-[11px] leading-4 text-[#9AA1AE]">Wishlist priority: {eq.priority}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => navigate('/equipment')}
-                    className="px-2 py-1 rounded text-[10px] font-bold bg-[#262A36] text-[#F5F6F8] shrink-0"
+                    className="min-h-9 px-3 py-2 rounded text-[11px] font-bold bg-[#262A36] text-[#F5F6F8] shrink-0"
                   >
                     Equipment
                   </button>
@@ -376,7 +374,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-[#262A36] text-right">
+          <div className="mt-6 pt-4 border-t border-[#262A36] text-right">
             <button
               onClick={() => navigate('/members')}
               className="text-xs font-bold text-[#DA0E19] hover:underline"
