@@ -34,15 +34,13 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       Promise.all([api.getMembers(), api.getPlans()]).then(([mList, pList]) => {
         setMembers(mList);
         setPlans(pList);
+        setPlanId(pList[0]?.id ?? '');
         if (preselectedClientId) {
           setClientId(preselectedClientId);
         } else if (mList.length > 0) {
           setClientId(mList[0].id);
         }
       });
-      // Default monthly plan
-      const defaultPlanId = 'p1';
-      setPlanId(defaultPlanId);
       setAmountUgx(50000);
 
       // Default expires on 30 days
@@ -61,11 +59,16 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
       return;
     }
 
+    if (!planId) {
+      setError('Please select a plan.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       await api.recordPayment({
         clientId,
-        planId: planId || 'p1',
+        planId,
         amountUgx,
         paidOn,
         expiresOn,
@@ -109,14 +112,23 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-[#F5F6F8] mb-1">Plan</label>
-            <select
-              value={planId}
-              onChange={(e) => setPlanId(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-[#1A1D26] border border-[#262A36] rounded-lg text-[#F5F6F8] focus:outline-none focus:border-[#DA0E19]"
-            >
-              <option value="p1">Monthly Membership (UGX 50,000)</option>
-              <option value="p2">10-Session Pass (UGX 40,000)</option>
-            </select>
+            {plans.length > 0 ? (
+              <select
+                value={planId}
+                onChange={(e) => setPlanId(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-[#1A1D26] border border-[#262A36] rounded-lg text-[#F5F6F8] focus:outline-none focus:border-[#DA0E19]"
+              >
+                {plans.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} (UGX {p.price_ugx.toLocaleString()})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs leading-5 text-amber-300">
+                No plans set up yet — add one in Settings.
+              </div>
+            )}
           </div>
 
           <div>

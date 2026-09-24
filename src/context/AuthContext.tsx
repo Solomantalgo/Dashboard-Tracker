@@ -28,8 +28,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [allCoaches, setAllCoaches] = useState<Coach[]>([]);
   const [authenticatedMember, setAuthenticatedMember] = useState<Client | undefined>();
   const [authenticatedCoach, setAuthenticatedCoach] = useState<Coach | undefined>();
-  const [activeMemberId, setActiveMemberId] = useState<string>('m1');
-  const [activeCoachId, setActiveCoachId] = useState<string>('c1');
+  const [activeMemberId, setActiveMemberId] = useState<string>('');
+  const [activeCoachId, setActiveCoachId] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
 
   // Demo access must be explicitly enabled. An absent/misconfigured Supabase
@@ -144,10 +144,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loginAsDemoRole = async (targetRole: AppRole, entityId?: string) => {
     setRoleState(targetRole);
     if (targetRole === 'client') {
-      const targetId = entityId || allMembers[0]?.id || 'm1';
+      const targetId = entityId || allMembers[0]?.id || '';
       setActiveMemberId(targetId);
     } else if (targetRole === 'coach') {
-      const targetId = entityId || allCoaches[0]?.id || 'c1';
+      const targetId = entityId || allCoaches[0]?.id || '';
       setActiveCoachId(targetId);
     }
   };
