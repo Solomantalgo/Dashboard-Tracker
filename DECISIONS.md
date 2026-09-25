@@ -63,3 +63,11 @@ The same `invite-user` Edge Function accepts `action = 'reset'` for an already-l
 - Not verified: schema execution, Supabase CRUD, refresh persistence, Auth/RLS tests, deactivation/delete runtime behavior, and member/coach invite/revocation.
 - Read-only live table check: the configured project returned HTTP 200 and zero rows for all queried domain tables, including `coaches`, `plans`, and `targets`. No writes or UI verification were performed because the project was not identified as disposable, admin credentials were unavailable, and browser automation was unavailable.
 - Portal identity/layout fix: `MemberLayout` demo switcher controls are gated by explicit `VITE_DEMO_MODE=true`; real client and coach records loaded by `AuthContext` are authoritative rather than falling back to the first mock/list record. Member and coach portals use bottom tabs on mobile and desktop side rails with wider responsive content areas. Real-user and three-viewport visual checks remain unverified.
+
+## Portal Login Email Display (2026-09-25)
+
+- Added nullable `portal_email` columns to `clients` and `coaches` in `pffi_schema_v1.sql`, including idempotent `alter table ... add column if not exists` statements so the schema remains the single source of truth.
+- The `invite-user` Edge Function writes `portal_email` together with `user_id` after creating the Auth user. Password resets do not update or clear this column.
+- The frontend reads the display copy from the existing `clients`/`coaches` query and omits the email when it is null, preserving compatibility with older invited records.
+- The schema was not applied to the Supabase test project from this environment, and `invite-user` was not redeployed or live-tested. Apply the schema, then re-run `supabase functions deploy invite-user`; Edge Functions do not auto-deploy on git push. The deployment is required after this function code change.
+- The frontend now reads the JSON `error` field from a failed function response, so errors such as "This person has no portal access yet. Invite them first." reach the UI instead of being replaced by the generic non-2xx message. End-to-end failure/success checks remain pending until the test project is updated and the function is deployed.

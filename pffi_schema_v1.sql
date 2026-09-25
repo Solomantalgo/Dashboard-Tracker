@@ -46,6 +46,7 @@ create table if not exists user_roles (
 create table if not exists coaches (
   id        uuid primary key default gen_random_uuid(),
   user_id   uuid unique references auth.users (id),
+  portal_email text,
   full_name text not null,
   phone     text,
   active    boolean not null default true
@@ -56,6 +57,7 @@ create table if not exists clients (
   id             uuid primary key default gen_random_uuid(),
   member_code    text unique not null,                 -- e.g. PFFI001 (must be unique, fixes the ID mismatch)
   user_id        uuid unique references auth.users (id), -- set when the member gets a portal login
+  portal_email   text,                                   -- display copy of the portal login identity
   full_name      text not null,
   status         client_status not null default 'active',
   phone          text,
@@ -68,6 +70,10 @@ create table if not exists clients (
   consent_given_at timestamptz,                         -- when the member agreed to their data being stored
   created_at     timestamptz not null default now()
 );
+
+-- Keep the canonical schema safe to re-run against projects created before portal emails were added.
+alter table coaches add column if not exists portal_email text;
+alter table clients add column if not exists portal_email text;
 
 -- Most sensitive data in the system. Admin-only in v1 (see policies below).
 create table if not exists health_screenings (

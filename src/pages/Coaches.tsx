@@ -184,7 +184,7 @@ export const Coaches: React.FC = () => {
                 {c.user_id ? (
                   <div className="flex w-full flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                     <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> Portal Active
+                      <CheckCircle className="w-3.5 h-3.5" /> Portal Active{c.portal_email && <span className="font-normal">— {c.portal_email}</span>}
                     </span>
                     <button
                       onClick={() => setRevokeCoach(c)}

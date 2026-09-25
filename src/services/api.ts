@@ -16,6 +16,30 @@ export interface DashboardChartData {
   revenue: Array<{ month: string; key: string; revenue: number }>;
 }
 
+type InviteFunctionError = {
+  message?: string;
+  context?: { json?: () => Promise<unknown> };
+};
+
+const invokeInviteUser = async (body: Record<string, string>, fallbackMessage: string) => {
+  const { data, error } = await supabase!.functions.invoke('invite-user', { body });
+  if (error) {
+    let message = (error as InviteFunctionError).message || fallbackMessage;
+    try {
+      const responseBody = await (error as InviteFunctionError).context?.json?.();
+      if (responseBody && typeof responseBody === 'object' && 'error' in responseBody) {
+        const functionMessage = (responseBody as { error?: unknown }).error;
+        if (typeof functionMessage === 'string' && functionMessage) message = functionMessage;
+      }
+    } catch {
+      // Keep the SDK error message when the response body is unavailable or not JSON.
+    }
+    throw new Error(message);
+  }
+  if (!data?.success) throw new Error(data?.error || fallbackMessage);
+  return data;
+};
+
 const getKampalaWeekStart = (today: Date) => {
   const dayOfWeek = today.getUTCDay();
   return subDays(today, (dayOfWeek + 6) % 7);
@@ -1021,18 +1045,19 @@ export const api = {
     const tempPassword = `Pffi#${Math.random().toString(36).slice(-6)}`;
 
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.functions.invoke('invite-user', {
-        body: { email, targetType: 'client', targetId: clientId }
-      });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Unable to create member portal access.');
-      return data;
+      return invokeInviteUser(
+        { email, targetType: 'client', targetId: clientId },
+        'Unable to create member portal access.'
+      );
     }
 
     const mockUserId = `auth_client_${clientId}`;
     local.userRoles.push({ user_id: mockUserId, role: 'client', email });
     const c = local.clients.find(item => item.id === clientId);
-    if (c) c.user_id = mockUserId;
+    if (c) {
+      c.user_id = mockUserId;
+      c.portal_email = email;
+    }
     local.save();
 
     return { success: true, tempPassword };
@@ -1041,12 +1066,10 @@ export const api = {
   async resetClientPassword(clientId: string): Promise<{ success: boolean; tempPassword?: string }> {
     const tempPassword = `Pffi#${Math.random().toString(36).slice(-6)}`;
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.functions.invoke('invite-user', {
-        body: { action: 'reset', targetType: 'client', targetId: clientId }
-      });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Unable to reset the member password.');
-      return data;
+      return invokeInviteUser(
+        { action: 'reset', targetType: 'client', targetId: clientId },
+        'Unable to reset the member password.'
+      );
     }
     return { success: true, tempPassword };
   },
@@ -1072,18 +1095,19 @@ export const api = {
     const tempPassword = `Coach#${Math.random().toString(36).slice(-6)}`;
 
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.functions.invoke('invite-user', {
-        body: { email, targetType: 'coach', targetId: coachId }
-      });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Unable to create coach portal access.');
-      return data;
+      return invokeInviteUser(
+        { email, targetType: 'coach', targetId: coachId },
+        'Unable to create coach portal access.'
+      );
     }
 
     const mockUserId = `auth_coach_${coachId}`;
     local.userRoles.push({ user_id: mockUserId, role: 'coach', email });
     const ch = local.coaches.find(item => item.id === coachId);
-    if (ch) ch.user_id = mockUserId;
+    if (ch) {
+      ch.user_id = mockUserId;
+      ch.portal_email = email;
+    }
     local.save();
 
     return { success: true, tempPassword };
@@ -1092,12 +1116,10 @@ export const api = {
   async resetCoachPassword(coachId: string): Promise<{ success: boolean; tempPassword?: string }> {
     const tempPassword = `Coach#${Math.random().toString(36).slice(-6)}`;
     if (isSupabaseConfigured && supabase) {
-      const { data, error } = await supabase.functions.invoke('invite-user', {
-        body: { action: 'reset', targetType: 'coach', targetId: coachId }
-      });
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Unable to reset the coach password.');
-      return data;
+      return invokeInviteUser(
+        { action: 'reset', targetType: 'coach', targetId: coachId },
+        'Unable to reset the coach password.'
+      );
     }
     return { success: true, tempPassword };
   },

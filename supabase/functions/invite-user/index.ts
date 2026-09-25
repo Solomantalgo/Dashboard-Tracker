@@ -110,7 +110,7 @@ Deno.serve(async request => {
 
   const { data: linkedRows, error: linkError } = await adminClient
     .from(table)
-    .update({ user_id: userId })
+    .update({ user_id: userId, portal_email: email })
     .eq('id', targetId)
     .is('user_id', null)
     .select('id');

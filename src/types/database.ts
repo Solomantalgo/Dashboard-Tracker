@@ -14,6 +14,7 @@ export interface UserRole {
 export interface Coach {
   id: string;
   user_id?: string;
+  portal_email?: string;
   full_name: string;
   phone?: string;
   active: boolean;
@@ -23,6 +24,7 @@ export interface Client {
   id: string;
   member_code: string;
   user_id?: string;
+  portal_email?: string;
   full_name: string;
   status: ClientStatus;
   phone?: string;

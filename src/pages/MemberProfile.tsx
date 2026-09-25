@@ -326,6 +326,7 @@ export const MemberProfile: React.FC = () => {
             <div className="flex items-center gap-2 flex-wrap justify-end">
               <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                 <CheckCircle className="w-3.5 h-3.5" /> Portal Access Active
+                {member.portal_email && <span className="font-normal">— {member.portal_email}</span>}
               </span>
               <button
                 onClick={handleRevokePortalAccess}
