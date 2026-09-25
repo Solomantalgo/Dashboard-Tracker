@@ -314,6 +314,11 @@ create policy "client reads own attendance" on attendance for select using (clie
 drop policy if exists "client reads own assessments" on assessments;
 create policy "client reads own assessments" on assessments for select using (client_id in (select id from clients where user_id = auth.uid()));
 
+drop policy if exists "client reads assigned coach" on coaches;
+create policy "client reads assigned coach" on coaches for select using (
+  id in (select coach_id from clients where user_id = auth.uid())
+);
+
 -- Coach policies: can read own coach record, assigned clients, attendance, sessions, and assigned assessments.
 drop policy if exists "coach reads own record" on coaches;
 create policy "coach reads own record" on coaches for select using (user_id = auth.uid());

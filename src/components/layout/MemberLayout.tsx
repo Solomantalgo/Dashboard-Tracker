@@ -1,6 +1,6 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, TrendingUp, CreditCard, User, Flame, Shield } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { Home, TrendingUp, CreditCard, User, Flame, Shield, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 interface MemberLayoutProps {
@@ -8,26 +8,33 @@ interface MemberLayoutProps {
 }
 
 export const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
-  const { setRole, activeMember, setActiveMemberId, allMembers, isDemoMode } = useAuth();
+  const { setRole, activeMember, setActiveMemberId, allMembers, isDemoMode, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login');
+  };
 
   return (
-    <div className="min-h-screen bg-[#0A0B10] text-[#F5F6F8] flex flex-col pb-20 md:pl-64">
+    <div className="min-h-screen bg-[#0A0B10] text-[#F5F6F8] flex flex-col pb-24 md:pb-0 md:pl-64">
       {/* Mobile Top Header */}
-      <header className="sticky top-0 z-30 bg-[#12141B]/95 backdrop-blur-md border-b border-[#262A36] px-4 py-3 md:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 bg-[#12141B]/95 backdrop-blur-md border-b border-[#262A36] px-4 py-3 md:px-8 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <img
             src="/assets/logo.jpeg"
             alt="PFFI Logo"
             className="w-9 h-9 object-contain rounded-lg border border-[#262A36] bg-[#0A0B10]"
           />
-          <div>
-            <h1 className="font-extrabold font-heading text-sm text-[#F5F6F8]">PFFI Member Portal</h1>
+          <div className="min-w-0">
+            <h1 className="break-words font-extrabold font-heading text-sm text-[#F5F6F8]">PFFI Member Portal</h1>
             <p className="text-[10px] text-[#9AA1AE]">Kampala Outdoor Training</p>
           </div>
         </div>
 
-        {isDemoMode && (
-          <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
+          {isDemoMode && (
+            <div className="flex items-center gap-2">
             {/* Member Switcher for Demo */}
             <select
               aria-label="Demo member switcher"
@@ -48,17 +55,28 @@ export const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
               <Shield className="w-3 h-3 text-[#DA0E19]" />
               Admin
             </button>
-          </div>
-        )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="rounded-lg p-2 text-[#9AA1AE] transition-colors hover:bg-[#1A1D26] hover:text-white focus:outline-none focus:ring-2 focus:ring-[#DA0E19]/50"
+            title="Sign Out"
+            aria-label="Sign Out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 w-full max-w-md mx-auto md:max-w-5xl lg:max-w-6xl p-4 md:px-8 lg:px-10 md:py-8 space-y-5">
+      <main className="flex-1 w-full max-w-md mx-auto px-4 py-5 md:max-w-4xl md:px-8 md:py-10">
         {children}
       </main>
 
       {/* Portal Navigation: bottom tabs on phones, left rail on larger screens */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#12141B] border-t border-[#262A36] px-4 py-2 flex items-center justify-around md:top-0 md:bottom-0 md:left-0 md:right-auto md:w-64 md:max-w-none md:border-t-0 md:border-r md:px-4 md:py-8 md:flex-col md:justify-start md:items-stretch md:gap-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-[#262A36] bg-[#12141B] px-3 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-8px_24px_rgba(0,0,0,0.2)] md:top-0 md:bottom-0 md:left-0 md:right-auto md:w-64 md:max-w-none md:border-r md:border-t-0 md:px-4 md:py-8 md:shadow-none md:flex-col md:justify-start md:items-stretch md:gap-2">
         <div className="hidden md:flex items-center gap-3 px-2 pb-8">
           <img src="/assets/logo.jpeg" alt="PFFI Logo" className="w-11 h-11 object-contain rounded-lg border border-[#262A36] bg-[#0A0B10]" />
           <div>
@@ -70,8 +88,8 @@ export const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
           to="/portal"
           end
           className={({ isActive }) =>
-            `flex flex-col md:flex-row md:items-center md:gap-3 md:w-full md:px-3 md:py-3 md:rounded-lg items-center gap-1 p-1 text-xs font-semibold transition-colors ${
-              isActive ? 'text-[#DA0E19]' : 'text-[#9AA1AE]'
+            `flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:gap-3 md:w-full md:flex-none md:px-3 md:py-3 md:rounded-lg items-center gap-1 rounded-lg p-1 text-xs font-semibold transition-colors ${
+              isActive ? 'bg-[#DA0E19]/10 text-[#DA0E19] ring-1 ring-inset ring-[#DA0E19]/35' : 'text-[#9AA1AE] hover:bg-[#1A1D26] hover:text-[#F5F6F8]'
             }`
           }
         >
@@ -82,8 +100,8 @@ export const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
         <NavLink
           to="/portal/progress"
           className={({ isActive }) =>
-            `flex flex-col md:flex-row md:items-center md:gap-3 md:w-full md:px-3 md:py-3 md:rounded-lg items-center gap-1 p-1 text-xs font-semibold transition-colors ${
-              isActive ? 'text-[#DA0E19]' : 'text-[#9AA1AE]'
+            `flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:gap-3 md:w-full md:flex-none md:px-3 md:py-3 md:rounded-lg items-center gap-1 rounded-lg p-1 text-xs font-semibold transition-colors ${
+              isActive ? 'bg-[#DA0E19]/10 text-[#DA0E19] ring-1 ring-inset ring-[#DA0E19]/35' : 'text-[#9AA1AE] hover:bg-[#1A1D26] hover:text-[#F5F6F8]'
             }`
           }
         >
@@ -94,8 +112,8 @@ export const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
         <NavLink
           to="/portal/payments"
           className={({ isActive }) =>
-            `flex flex-col md:flex-row md:items-center md:gap-3 md:w-full md:px-3 md:py-3 md:rounded-lg items-center gap-1 p-1 text-xs font-semibold transition-colors ${
-              isActive ? 'text-[#DA0E19]' : 'text-[#9AA1AE]'
+            `flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:gap-3 md:w-full md:flex-none md:px-3 md:py-3 md:rounded-lg items-center gap-1 rounded-lg p-1 text-xs font-semibold transition-colors ${
+              isActive ? 'bg-[#DA0E19]/10 text-[#DA0E19] ring-1 ring-inset ring-[#DA0E19]/35' : 'text-[#9AA1AE] hover:bg-[#1A1D26] hover:text-[#F5F6F8]'
             }`
           }
         >
@@ -106,8 +124,8 @@ export const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
         <NavLink
           to="/portal/profile"
           className={({ isActive }) =>
-            `flex flex-col md:flex-row md:items-center md:gap-3 md:w-full md:px-3 md:py-3 md:rounded-lg items-center gap-1 p-1 text-xs font-semibold transition-colors ${
-              isActive ? 'text-[#DA0E19]' : 'text-[#9AA1AE]'
+            `flex min-w-0 flex-1 flex-col md:flex-row md:items-center md:gap-3 md:w-full md:flex-none md:px-3 md:py-3 md:rounded-lg items-center gap-1 rounded-lg p-1 text-xs font-semibold transition-colors ${
+              isActive ? 'bg-[#DA0E19]/10 text-[#DA0E19] ring-1 ring-inset ring-[#DA0E19]/35' : 'text-[#9AA1AE] hover:bg-[#1A1D26] hover:text-[#F5F6F8]'
             }`
           }
         >
