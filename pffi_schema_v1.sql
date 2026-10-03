@@ -71,6 +71,40 @@ create table if not exists clients (
   created_at     timestamptz not null default now()
 );
 
+-- Member numbers are allocated independently of row counts so deletions and
+-- concurrent registrations cannot reuse an existing code.
+create sequence if not exists clients_member_number_seq;
+
+do $$
+declare
+  highest_used bigint;
+  current_value bigint;
+  sequence_called boolean;
+begin
+  select max(substring(member_code from 5)::bigint)
+    into highest_used
+    from clients
+    where member_code ~ '^PFFI[0-9]+$';
+
+  select last_value, is_called into current_value, sequence_called
+    from clients_member_number_seq;
+
+  if highest_used is not null and
+     (highest_used > current_value or (highest_used = current_value and not sequence_called)) then
+    perform setval('clients_member_number_seq', highest_used, true);
+  elsif highest_used is null and not sequence_called then
+    perform setval('clients_member_number_seq', 1, false);
+  end if;
+end $$;
+
+create or replace function next_member_number() returns int
+language sql
+security definer
+set search_path = public
+as $$ select nextval('clients_member_number_seq')::int $$;
+
+grant execute on function next_member_number() to authenticated;
+
 -- Keep the canonical schema safe to re-run against projects created before portal emails were added.
 alter table coaches add column if not exists portal_email text;
 alter table clients add column if not exists portal_email text;

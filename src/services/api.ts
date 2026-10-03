@@ -458,12 +458,7 @@ export const api = {
 
   async addMember(input: Omit<Client, 'id' | 'member_code' | 'created_at'>, healthNotes?: string): Promise<Client> {
     if (isSupabaseConfigured && supabase) {
-      const { count } = await supabase.from('clients').select('*', { count: 'exact', head: true });
-      const nextNum = (count ?? 0) + 1;
-      const member_code = `PFFI${String(nextNum).padStart(3, '0')}`;
-
       const insertData = {
-        member_code,
         full_name: input.full_name,
         status: input.status || 'active',
         phone: input.phone,
@@ -476,8 +471,33 @@ export const api = {
         consent_given_at: input.consent_given_at || new Date().toISOString()
       };
 
-      const { data, error } = await supabase.from('clients').insert(insertData).select().single();
-      if (error) throw error;
+      let data: Client | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data: seqData, error: seqError } = await supabase.rpc('next_member_number');
+        if (seqError) throw new Error(`Could not generate a member code: ${seqError.message}`);
+        const nextNum = Number(seqData);
+        if (!Number.isSafeInteger(nextNum) || nextNum < 1) {
+          throw new Error('Could not generate a valid member code. Please try again.');
+        }
+
+        const member_code = `PFFI${String(nextNum).padStart(3, '0')}`;
+        const { data: inserted, error } = await supabase.from('clients').insert({ ...insertData, member_code }).select().single();
+        if (!error) {
+          data = inserted;
+          break;
+        }
+
+        const isMemberCodeConflict = error.code === '23505' &&
+          `${error.message} ${error.details || ''} ${error.hint || ''}`.toLowerCase().includes('member_code');
+        if (!isMemberCodeConflict || attempt === 2) {
+          if (isMemberCodeConflict) {
+            throw new Error('Could not assign a unique member code after several attempts. Please try again or contact support.');
+          }
+          throw error;
+        }
+      }
+
+      if (!data) throw new Error('Member registration failed. Please try again.');
 
       if (healthNotes && data?.id) {
         await supabase.from('health_screenings').insert({
@@ -489,7 +509,11 @@ export const api = {
       return data;
     }
 
-    const nextNum = local.clients.length + 1;
+    const usedNumbers = local.clients
+      .map(client => /^PFFI(\d+)$/i.exec(client.member_code)?.[1])
+      .filter((value): value is string => Boolean(value))
+      .map(Number);
+    const nextNum = Math.max(0, ...usedNumbers) + 1;
     const member_code = `PFFI${String(nextNum).padStart(3, '0')}`;
     const newClient: Client = {
       ...input,
