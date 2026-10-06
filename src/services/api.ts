@@ -45,6 +45,13 @@ const getKampalaWeekStart = (today: Date) => {
   return subDays(today, (dayOfWeek + 6) % 7);
 };
 
+const getKampalaDate = (date = new Date()) => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Africa/Kampala',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit'
+}).format(date);
+
 const buildChartPeriods = (today: Date): DashboardChartData => {
   const currentWeekStart = getKampalaWeekStart(today);
   const attendance = Array.from({ length: 8 }, (_, index) => {
@@ -158,6 +165,15 @@ class LocalState {
 const local = new LocalState();
 
 export const api = {
+  async getKampalaToday(): Promise<string> {
+    if (isSupabaseConfigured && supabase) {
+      const { data, error } = await supabase.rpc('kampala_today');
+      if (error) throw error;
+      return String(data);
+    }
+    return getKampalaDate();
+  },
+
   // --- Dashboard Metrics & Calculated Views ---
   async getDashboardChartData(): Promise<DashboardChartData> {
     if (isSupabaseConfigured && supabase) {
@@ -655,7 +671,8 @@ export const api = {
   },
 
   async startTodaySession(coachId?: string, title?: string): Promise<Session> {
-    const todayStr = format(new Date(), 'yyyy-MM-dd');
+    const todayStr = await this.getKampalaToday();
+    const displayDate = format(parseISO(todayStr), 'EEE, MMM d');
     if (isSupabaseConfigured && supabase) {
       const { data: existing } = await supabase.from('sessions').select('*').eq('session_date', todayStr).maybeSingle();
       if (existing) return existing;
@@ -667,7 +684,7 @@ export const api = {
         session_date: todayStr,
         start_time: '07:00:00',
         coach_id: selectedCoachId,
-        title: title || `PFFI Morning Training (${format(new Date(), 'EEE, MMM d')})`
+        title: title || `PFFI Morning Training (${displayDate})`
       }).select().single();
 
       if (error) throw error;
@@ -684,7 +701,7 @@ export const api = {
       start_time: '07:00',
       coach_id: coach?.id,
       coach_name: coach?.full_name,
-      title: title || `PFFI Morning Training (${format(new Date(), 'EEE, MMM d')})`,
+      title: title || `PFFI Morning Training (${displayDate})`,
       attended_count: 0
     };
     local.sessions.unshift(newSession);

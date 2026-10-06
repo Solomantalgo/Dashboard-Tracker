@@ -136,7 +136,7 @@ export const Dashboard: React.FC = () => {
         <KpiCard
           title="Check-ins This Wk"
           value={metrics?.checkinsThisWeek ?? 0}
-          subtitle="Mon - Thu 7am sessions"
+          subtitle="Mon - Fri 7am sessions"
           icon={CalendarCheck}
         />
         <KpiCard
@@ -170,7 +170,7 @@ export const Dashboard: React.FC = () => {
               <p className="text-xs leading-5 text-[#9AA1AE]">Confirmed attendance records by week</p>
             </div>
             <span className="text-xs font-semibold px-2 py-1 rounded bg-[#1A1D26] text-[#B9BEC7] border border-[#262A36]">
-              Mon - Thu
+              Mon - Fri
             </span>
           </div>
           <div className="h-64 sm:h-72 w-full min-w-0">

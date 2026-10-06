@@ -5,7 +5,6 @@ import { Client, Session, Coach } from '../types/database';
 import {
   CalendarCheck, Search, Plus, Check, Circle, Loader2
 } from 'lucide-react';
-import { format } from 'date-fns';
 
 export const Attendance: React.FC = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -21,10 +20,11 @@ export const Attendance: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [sRes, mRes, cRes] = await Promise.all([
+      const [sRes, mRes, cRes, todayStr] = await Promise.all([
         api.getSessions(),
         api.getMembers(),
-        api.getCoaches()
+        api.getCoaches(),
+        api.getKampalaToday()
       ]);
       setSessions(sRes);
       setCoaches(cRes);
@@ -34,7 +34,6 @@ export const Attendance: React.FC = () => {
       setActiveMembers(active);
 
       // Select today's session if available, else latest
-      const todayStr = format(new Date(), 'yyyy-MM-dd');
       let targetSession = sRes.find(s => s.session_date === todayStr) || sRes[0];
       if (targetSession) {
         await selectSession(targetSession.id);

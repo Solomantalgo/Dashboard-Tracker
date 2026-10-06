@@ -21,7 +21,7 @@ You are a senior full-stack engineer and product designer. Build the working web
 | Fact | Detail (from the owner's flyer) |
 |---|---|
 | Location | Safe Fields Boston, Kizungu (single location) |
-| Workout days | Monday to Thursday, 7am to 8am |
+| Workout days | Monday to Friday, 7am to 8am |
 | Monthly fee | UGX 50,000 |
 | Promise | Weight loss, strength building, fitness improvement, fitness assessments, structured group training, progress tracking |
 | Size today | About 17 to 25 members, at least 2 coaches |
@@ -29,7 +29,7 @@ You are a senior full-stack engineer and product designer. Build the working web
 
 The owner currently runs everything in one Google Sheet. Its tabs: Attendance Tracker, Payment Tracker, Finance Tracker, Coach Management, Assessment Tracker, Content Tracker, PFFI Assessment Form, PFFI Dashboard.
 
-Note: the old sheet tracked Monday to Friday, but the flyer says Monday to Thursday. Do not hard-code weekdays. Sessions are created for any date.
+Note: workout days are Monday to Friday. Do not hard-code weekday restrictions. Sessions can be created for any date.
 
 ## 2. Problem to solve (pain points in the sheet)
 
@@ -263,7 +263,7 @@ Known problems in the sheet:
 5. Expenses are tracked (the sheet's Finance tab suggests yes).
 6. Equipment needed is a simple wishlist.
 7. Show-up window of 30 days, "stopped coming" after 14 days, assessment every 4 weeks.
-8. Sessions run Monday to Thursday (flyer) rather than Monday to Friday (sheet).
+8. Sessions run Monday to Friday. Session creation remains available for any date.
 9. Coaches do not log in yet.
 10. Members will log in to see their own progress and payments.
 11. Who besides the admin may see health screening data.

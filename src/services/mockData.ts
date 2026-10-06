@@ -155,7 +155,7 @@ export const mockPayments: Payment[] = [
   { id: 'pay7', client_id: 'm7', client_name: 'Brian Ochieng', plan_id: 'p1', plan_name: 'Monthly Membership', amount_ugx: 50000, paid_on: formatDate(subDays(today, 10)), expires_on: formatDate(addDays(today, 20)), method: 'Airtel Money', status: 'confirmed', provider_ref: 'MANUAL-007' }
 ];
 
-// Seed Sessions for the past 6 weeks (Monday - Thursday)
+// Seed Sessions for the past 6 weeks (Monday - Friday)
 export const generateMockSessionsAndAttendance = () => {
   const sessions: Session[] = [];
   const attendance: { session_id: string; client_id: string }[] = [];
