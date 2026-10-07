@@ -131,7 +131,7 @@ create table if not exists plans (
 
 create table if not exists payments (
   id           uuid primary key default gen_random_uuid(),
-  client_id    uuid not null references clients (id),
+  client_id    uuid not null references clients (id) on delete cascade,
   plan_id      uuid not null references plans (id),
   amount_ugx   int not null check (amount_ugx >= 0),
   paid_on      date not null,
