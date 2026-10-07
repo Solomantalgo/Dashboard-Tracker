@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { AppRole, Client, Coach } from '../types/database';
 import { api } from '../services/api';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
@@ -31,17 +31,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeMemberId, setActiveMemberId] = useState<string>('');
   const [activeCoachId, setActiveCoachId] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const refreshVersion = useRef(0);
 
   // Demo access must be explicitly enabled. An absent/misconfigured Supabase
   // environment still uses the API's local fallback, but must not bypass login.
   const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 
   const refreshData = async () => {
+    const version = ++refreshVersion.current;
     try {
       const [members, coaches] = await Promise.all([
         api.getMembers(true),
         api.getCoaches()
       ]);
+      // A slower anonymous or previous-account request must not replace a
+      // newer refresh started after authentication changed.
+      if (version !== refreshVersion.current) return;
       setAllMembers(members);
       setAllCoaches(coaches);
     } catch (e) {
@@ -56,6 +61,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const loadUserRole = async (userId: string) => {
     if (isSupabaseConfigured && supabase) {
       try {
+        // Avoid briefly exposing enriched rows from a previous identity.
+        setAllMembers([]);
+        setAllCoaches([]);
         setAuthenticatedMember(undefined);
         setAuthenticatedCoach(undefined);
         const { data: roleRow } = await supabase.from('user_roles').select('role').eq('user_id', userId).maybeSingle();
@@ -75,6 +83,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         }
+        // The initial mount refresh may have run before Supabase resolved the
+        // session. Fetch again now that RLS has the authenticated user.
+        await refreshData();
       } catch (err) {
         console.error('Failed to fetch user role from Supabase:', err);
       }
@@ -100,6 +111,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setRoleState('admin');
           setAuthenticatedMember(undefined);
           setAuthenticatedCoach(undefined);
+          setAllMembers([]);
+          setAllCoaches([]);
+          refreshVersion.current += 1;
         }
         setLoading(false);
       });
@@ -135,6 +149,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRoleState('admin');
     setAuthenticatedMember(undefined);
     setAuthenticatedCoach(undefined);
+    setAllMembers([]);
+    setAllCoaches([]);
+    refreshVersion.current += 1;
   };
 
   const setRole = (newRole: AppRole) => {
