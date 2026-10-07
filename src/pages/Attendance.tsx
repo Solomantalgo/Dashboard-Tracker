@@ -33,11 +33,17 @@ export const Attendance: React.FC = () => {
       const active = mRes.filter(m => m.status === 'active');
       setActiveMembers(active);
 
-      // Select today's session if available, else latest
-      let targetSession = sRes.find(s => s.session_date === todayStr) || sRes[0];
-      if (targetSession) {
-        await selectSession(targetSession.id);
+      // Opening Attendance starts today's session automatically when needed.
+      // Use this load's coach result because React state updates are async.
+      let targetSession = sRes.find(s => s.session_date === todayStr);
+      if (!targetSession) {
+        const createdSession = await api.startTodaySession(cRes[0]?.id);
+        targetSession = createdSession;
+        setSessions(prev => prev.some(s => s.id === createdSession.id)
+          ? prev
+          : [createdSession, ...prev].sort((a, b) => b.session_date.localeCompare(a.session_date)));
       }
+      if (targetSession) await selectSession(targetSession.id);
     } catch (err) {
       console.error('Error loading attendance data:', err);
     } finally {
