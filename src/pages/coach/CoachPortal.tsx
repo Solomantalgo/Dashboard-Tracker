@@ -13,6 +13,7 @@ export const CoachPortal: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [attendedClientIds, setAttendedClientIds] = useState<Set<string>>(new Set());
   const [assignedClients, setAssignedClients] = useState<Client[]>([]);
+  const [attendanceClients, setAttendanceClients] = useState<Client[]>([]);
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clientAssessments, setClientAssessments] = useState<Assessment[]>([]);
@@ -40,10 +41,16 @@ export const CoachPortal: React.FC = () => {
         setAttendedClientIds(new Set(details.attendedClientIds));
       }
 
-      // 2. Fetch clients assigned to this coach
+      // 2. Fetch all active clients for attendance, while retaining the
+      // assigned-only list for the assessment/detail view below.
       const allMembers = await api.getMembers(false);
       const myClients = allMembers.filter(m => !activeCoach || m.coach_id === activeCoach.id || isDemoMode);
       setAssignedClients(myClients);
+      setAttendanceClients([...allMembers].sort((a, b) => {
+        const aAssigned = activeCoach && a.coach_id === activeCoach.id ? 0 : 1;
+        const bAssigned = activeCoach && b.coach_id === activeCoach.id ? 0 : 1;
+        return aAssigned - bAssigned || a.full_name.localeCompare(b.full_name);
+      }));
     } catch (e) {
       console.error('Failed to load coach portal data:', e);
     } finally {
@@ -171,7 +178,7 @@ export const CoachPortal: React.FC = () => {
               <h2 className="font-bold text-base text-[#F5F6F8]">Today's Training Session</h2>
             </div>
             <span className="px-3 py-1 text-xs font-bold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-              {attendedClientIds.size} / {assignedClients.length} Attended
+              {attendedClientIds.size} / {attendanceClients.length} Attended
             </span>
           </div>
 
@@ -181,11 +188,12 @@ export const CoachPortal: React.FC = () => {
 
           {/* Quick Attendance Checklist */}
           <div className="divide-y divide-[#262A36] border border-[#262A36] rounded-xl overflow-hidden bg-[#1A1D26]">
-            {assignedClients.length === 0 ? (
-              <div className="p-4 text-xs text-center text-[#9AA1AE]">No assigned clients found for this coach.</div>
+            {attendanceClients.length === 0 ? (
+              <div className="p-4 text-xs text-center text-[#9AA1AE]">No active clients found.</div>
             ) : (
-              assignedClients.map(client => {
+              attendanceClients.map(client => {
                 const isAttended = attendedClientIds.has(client.id);
+                const isAssigned = Boolean(activeCoach && client.coach_id === activeCoach.id);
                 return (
                   <div key={client.id} className="p-3 flex items-center justify-between hover:bg-[#12141B] transition-all">
                     <div className="flex items-center gap-3">
@@ -194,6 +202,9 @@ export const CoachPortal: React.FC = () => {
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-[#F5F6F8]">{client.full_name}</div>
+                        <span className={`inline-flex mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${isAssigned ? 'bg-emerald-500/10 text-emerald-400' : 'bg-[#12141B] text-[#9AA1AE]'}`}>
+                          {isAssigned ? 'Assigned' : 'Other coach'}
+                        </span>
                         <div className="text-xs text-[#9AA1AE]">{client.member_code} • Level {client.level || 'A'}</div>
                       </div>
                     </div>

@@ -75,7 +75,7 @@ The code defines three roles intended to be backed by the database `user_roles` 
 
 1. **Admin (`admin`):** Intended to have full access to all screens, members directory, financial ledger, coach reviews, equipment wishlist, and health screening records.
 2. **Member (`client`):** Intended to use the read-only Member Portal (`/portal`) and be scoped to their own client record (`clients.user_id = auth.uid()`).
-3. **Coach (`coach`):** Intended to use the Coach Portal (`/coach`) for today's session, attendance, and assigned athletes.
+3. **Coach (`coach`):** Intended to use the Coach Portal (`/coach`) for today's session and attendance for all active members, while assessment/detail actions remain limited to assigned athletes.
 
 These role and RLS behaviors require live verification against a Supabase project; the local code inspection found the corresponding Auth and policy paths but does not prove runtime behavior.
 
@@ -122,7 +122,8 @@ No RLS/Auth query results are claimed here: this pass had no real test users, so
 - `npm install` completed successfully and `npm run build` completed successfully. Vite emitted a warning that the JavaScript chunk is larger than 500 kB after minification.
 - The repository does not contain `PFFI_fix_brief.md`, so that baseline could not be compared directly.
 - A1 is statically fixed: protected routes now require a signed-in user unless `VITE_DEMO_MODE=true`; an unconfigured build with demo mode off shows the login screen and warning.
-- A2 is statically fixed: coach attendance select and manage policies are restricted to clients assigned to the authenticated coach. No other domain policy uses unscoped `is_coach()`.
+- Coach attendance migration: coaches can read active clients, read/manage attendance for any member, and manage sessions; no coach write policy was added for client records, finance, payments, settings, reviews, or health screenings.
+- Live policy verification: `supabase db push` applied `20261025000000_allow_coaches_attend_all_members.sql` to linked `pffi-test`; direct `pg_policy` queries returned the expected `is_coach()` policies for `clients`, `attendance`, and `sessions`.
 - Empty-table fix: connected list reads now return successful Supabase empty results as empty arrays/`undefined`; local mock data is used only when the query errors, with a visible `console.error`.
 - Read-only live check on the configured Supabase project returned HTTP 200 and 0 rows for `clients`, `coaches`, `plans`, `payments`, `sessions`, `attendance`, `assessments`, `transactions`, `coach_reviews`, `content_posts`, `equipment_needs`, and `targets`.
 - No writes or UI clicks were performed because this workspace does not establish that the configured project is disposable, no admin test credentials are available, and browser automation is unavailable. Adding rows, empty-state rendering, UUID coach selection, and wrong-key console behavior remain unverified.

@@ -16,7 +16,7 @@ This document logs key design choices, assumptions, and simple sensible defaults
 - **Authentication:** Supabase Auth handles email + password authentication. User sessions are persisted and listened to via `onAuthStateChange`.
 - **Roles Boundary (`user_roles`, code path):** Upon login, `AuthContext` queries `user_roles` to retrieve the user's role (`admin`, `client`, or `coach`). Protected routes also require a real user unless `VITE_DEMO_MODE=true`; runtime role and RLS behavior remains unverified.
 - **Role Switcher UI:** The free role switcher in the app header is removed from standard production builds and is rendered **only** when `VITE_DEMO_MODE=true` for developer testing.
-- **Coach Role Scoping (intended):** The code routes coaches toward `/coach`, and the schema contains policies for assigned athletes. Attendance select/manage policies now use the same assigned-client predicate; financial transactions, coach reviews, and other coaches' clients were not live-tested.
+- **Coach Role Scoping (intended):** The code routes coaches toward `/coach`. Coaches can read all active clients for attendance, read/manage attendance for any member, and manage sessions; assessment/detail actions remain assigned-client-only. Financial transactions, coach reviews, settings, and health screenings remain outside coach access.
 
 ---
 
@@ -57,7 +57,8 @@ The same `invite-user` Edge Function accepts `action = 'reset'` for an already-l
 
 - Static inspection: code paths for Bugs 1, 3, 4, and 5 were found; the local fallbacks and requested actions are present.
 - A1 fix: protected routes now require `user` unless explicit `VITE_DEMO_MODE=true`; unconfigured demo-off login displays a warning.
-- A2 fix: both coach attendance policies are scoped to clients assigned to the authenticated coach; no other unscoped `is_coach()` policy was found.
+- Coach attendance migration: `20261025000000_allow_coaches_attend_all_members.sql` widens client read, attendance read/write, and session management to `is_coach()` while leaving client writes and unrelated admin-only areas unchanged.
+- Live policy verification: `supabase db push` applied the migration to linked `pffi-test`; direct `pg_policy` queries confirmed `coach reads all clients`, `coach attendance select`, `coach attendance manage`, and `coach manages sessions`.
 - Schema comparison: `pffi_schema_v1.sql` is not text-identical to Appendix A of `PFFI_build_brief.md`; it is an expanded executable migration with idempotent DDL, views, helper functions, RLS, and seed rows. `PFFI_fix_brief.md` is absent from the repository.
 - Build: `npm install` succeeded; `npm run build` succeeded with Vite's >500 kB chunk warning.
 - Not verified: schema execution, Supabase CRUD, refresh persistence, Auth/RLS tests, deactivation/delete runtime behavior, and member/coach invite/revocation.

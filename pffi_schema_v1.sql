@@ -349,28 +349,42 @@ drop policy if exists "client reads own assessments" on assessments;
 create policy "client reads own assessments" on assessments for select using (client_id in (select id from clients where user_id = auth.uid()));
 
 drop policy if exists "client reads assigned coach" on coaches;
+create or replace function public.client_has_assigned_coach(target_coach_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.clients
+    where user_id = auth.uid()
+      and coach_id = target_coach_id
+  );
+$$;
+
 create policy "client reads assigned coach" on coaches for select using (
-  id in (select coach_id from clients where user_id = auth.uid())
+  public.client_has_assigned_coach(id)
 );
 
--- Coach policies: can read own coach record, assigned clients, attendance, sessions, and assigned assessments.
+-- Coach policies: can read all active members for attendance, manage attendance
+-- and sessions, while all member/profile editing remains admin-only.
 drop policy if exists "coach reads own record" on coaches;
 create policy "coach reads own record" on coaches for select using (user_id = auth.uid());
 
 drop policy if exists "coach reads assigned clients" on clients;
-create policy "coach reads assigned clients" on clients for select using (coach_id in (select id from coaches where user_id = auth.uid()));
+drop policy if exists "coach reads all clients" on clients;
+create policy "coach reads all clients" on clients for select using (is_coach());
 
 drop policy if exists "coach attendance select" on attendance;
-create policy "coach attendance select" on attendance for select using (
-  client_id in (select id from clients where coach_id in (select id from coaches where user_id = auth.uid()))
-);
+create policy "coach attendance select" on attendance for select using (is_coach());
 
 drop policy if exists "coach attendance manage" on attendance;
-create policy "coach attendance manage" on attendance for all using (
-  client_id in (select id from clients where coach_id in (select id from coaches where user_id = auth.uid()))
-) with check (
-  client_id in (select id from clients where coach_id in (select id from coaches where user_id = auth.uid()))
-);
+create policy "coach attendance manage" on attendance for all using (is_coach()) with check (is_coach());
+
+drop policy if exists "coach manages sessions" on sessions;
+create policy "coach manages sessions" on sessions for all using (is_coach()) with check (is_coach());
 
 drop policy if exists "coach reads assigned assessments" on assessments;
 create policy "coach reads assigned assessments" on assessments for select using (
