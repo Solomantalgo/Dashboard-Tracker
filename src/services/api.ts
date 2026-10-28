@@ -249,7 +249,7 @@ export const api = {
     return { attendance, revenue };
   },
 
-  async getDashboardMetrics(): Promise<DashboardMetrics> {
+  async getDashboardMetrics(strict = false): Promise<DashboardMetrics> {
     if (isSupabaseConfigured && supabase) {
       try {
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -257,13 +257,13 @@ export const api = {
         const startOfMonth = format(new Date(), 'yyyy-MM-01');
 
         const [
-          { count: activeMembers },
-          { data: attData },
-          { data: showUpView },
-          { data: paymentsMtd },
-          { data: statusView },
-          { data: atRiskView },
-          { count: equipmentCount }
+          { count: activeMembers, error: activeMembersError },
+          { data: attData, error: attendanceError },
+          { data: showUpView, error: showUpError },
+          { data: paymentsMtd, error: paymentsError },
+          { data: statusView, error: statusError },
+          { data: atRiskView, error: atRiskError },
+          { count: equipmentCount, error: equipmentError }
         ] = await Promise.all([
           supabase.from('clients').select('*', { count: 'exact', head: true }).eq('status', 'active'),
           supabase.from('attendance').select('session_id, sessions!inner(session_date)').gte('sessions.session_date', startOfWeek),
@@ -273,6 +273,9 @@ export const api = {
           supabase.from('v_at_risk_clients').select('*'),
           supabase.from('equipment_needs').select('*', { count: 'exact', head: true }).eq('resolved', false)
         ]);
+
+        const queryError = [activeMembersError, attendanceError, showUpError, paymentsError, statusError, atRiskError, equipmentError].find(Boolean);
+        if (queryError) throw queryError;
 
         const checkinsThisWeek = attData?.length ?? 0;
 
@@ -316,6 +319,7 @@ export const api = {
           equipmentNeedsCount: equipmentCount ?? 0
         };
       } catch (err) {
+        if (strict) throw err;
         console.warn('Supabase metric query failed, falling back to local calculation:', err);
       }
     }
@@ -407,7 +411,7 @@ export const api = {
   },
 
   // --- Members ---
-  async getMembers(includeInactive = false): Promise<Client[]> {
+  async getMembers(includeInactive = false, strict = false): Promise<Client[]> {
     if (isSupabaseConfigured && supabase) {
       try {
         let query = supabase.from('clients').select('*, coaches(full_name)');
@@ -436,6 +440,7 @@ export const api = {
           };
         });
       } catch (err) {
+        if (strict) throw err;
         console.warn('Supabase fetch members failed, falling back to local state:', err);
       }
     }
@@ -630,12 +635,13 @@ export const api = {
   },
 
   // --- Attendance & Sessions ---
-  async getSessions(): Promise<Session[]> {
+  async getSessions(strict = false): Promise<Session[]> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('sessions').select('*, coaches(full_name)').order('session_date', { ascending: false });
       if (!error) {
         const { data: attData, error: attendanceError } = await supabase.from('attendance').select('session_id');
         if (attendanceError) {
+          if (strict) throw attendanceError;
           console.error('getSessions attendance counts failed; returning real sessions with zero counts:', attendanceError);
         }
         const countMap = new Map<string, number>();
@@ -647,6 +653,7 @@ export const api = {
           attended_count: countMap.get(s.id) ?? 0
         }));
       }
+      if (strict) throw error;
       console.error('getSessions failed, falling back to local data:', error);
     }
     return local.sessions.sort((a, b) => b.session_date.localeCompare(a.session_date));
@@ -746,10 +753,11 @@ export const api = {
     return local.plans;
   },
 
-  async getPayments(): Promise<Payment[]> {
+  async getPayments(strict = false): Promise<Payment[]> {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase.from('payments').select('*, clients(full_name), plans(name)').order('paid_on', { ascending: false });
       if (error) {
+        if (strict) throw error;
         console.error('getPayments failed, falling back to local data:', error);
         return local.payments.map(p => {
           const client = local.clients.find(c => c.id === p.client_id);

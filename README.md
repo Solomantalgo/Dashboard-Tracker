@@ -79,6 +79,12 @@ The code defines three roles intended to be backed by the database `user_roles` 
 
 These role and RLS behaviors require live verification against a Supabase project; the local code inspection found the corresponding Auth and policy paths but does not prove runtime behavior.
 
+## Reports
+
+The Reports section is available to admins at `/reports` and from the admin sidebar. Coaches access Reports from their portal navigation. Admins can generate Business Summary, Members Directory, Attendance Log, and Payments / Finance Log reports. Coaches can generate Business Summary, Members Directory, and Attendance Log reports; finance/payment reports are not offered or queried for coach sessions.
+
+Reports download as branded PDF or escaped CSV. The shared report generator includes the PFFI logo, date range, generated-on/by metadata, page numbers, and a no-data state. Member exports include no health-screening or medical fields.
+
 ---
 
 ## Member Lifecycle Management

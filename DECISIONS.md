@@ -51,6 +51,14 @@ Deploy with `supabase functions deploy invite-user`. Supabase supplies `SUPABASE
 
 The same `invite-user` Edge Function accepts `action = 'reset'` for an already-linked client or coach. It verifies the caller as an admin, reads the linked `user_id`, calls `auth.admin.updateUserById` with a newly generated temporary password, and returns that password without storing it. Resetting an uninvited person returns an explicit "Invite them first" error. Live password rotation and old/new credential testing remain unverified until the function is deployed.
 
+## 7. Reports
+
+- **Shared generation:** `src/services/reports.ts` owns role-aware data shaping, CSV escaping/downloads, and branded `jspdf`/`jspdf-autotable` PDF output so all report types share the same header/footer treatment.
+- **Role boundary:** Admins receive Business Summary, Members Directory, Attendance Log, and Payments / Finance Log. Coaches receive only Business Summary, Members Directory, and Attendance Log. Coach report generation does not call dashboard metrics or payments queries, so no finance access is added.
+- **Sensitive data:** Members Directory exports include identity, contact, status, coach, level, goals, and join date only; health/medical data is excluded.
+- **No-data behavior:** Successful empty result sets remain empty and are rendered as `No data for the selected period.` rather than being replaced with mock rows.
+- **Verification:** The application build passed. Live PDF/CSV generation, number matching, coach option inspection, and PDF visual QA remain unverified without authenticated admin/coach browser sessions.
+
 ---
 
 ## Verification status (2026-09-23)

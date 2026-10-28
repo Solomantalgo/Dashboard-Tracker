@@ -5,6 +5,7 @@ import { Client, Session, Assessment } from '../../types/database';
 import { Calendar, CheckCircle2, User, Activity, LogOut, Plus, Search, Shield, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { ReportsPage } from '../Reports';
 
 export const CoachPortal: React.FC = () => {
   const { activeCoach, signOut, isDemoMode } = useAuth();
@@ -167,6 +168,7 @@ export const CoachPortal: React.FC = () => {
         </div>
         <a href="#coach-session" className="px-3 py-3 rounded-lg bg-[#1A1D26] text-sm font-semibold text-[#F5F6F8]">Today's Session</a>
         <a href="#assigned-clients" className="px-3 py-3 rounded-lg text-sm font-semibold text-[#9AA1AE] hover:bg-[#1A1D26] hover:text-white">Assigned Athletes</a>
+        <a href="#reports" className="px-3 py-3 rounded-lg text-sm font-semibold text-[#9AA1AE] hover:bg-[#1A1D26] hover:text-white">Reports</a>
       </aside>
 
       <div className="max-w-4xl md:max-w-6xl md:ml-64 md:mr-auto mx-auto px-4 md:px-8 lg:px-10 py-6 space-y-6">
@@ -322,6 +324,10 @@ export const CoachPortal: React.FC = () => {
           </div>
         )}
       </div>
+
+      <section id="reports" className="max-w-6xl md:ml-64 md:mr-auto mx-auto w-full px-4 md:px-8 lg:px-10 pb-8">
+        <ReportsPage embedded roleOverride="coach" />
+      </section>
 
       {/* New Assessment Modal */}
       {showAssessmentModal && selectedClient && (

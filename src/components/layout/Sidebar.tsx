@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Users, CalendarCheck, CreditCard, Activity,
-  TrendingUp, UserCheck, Share2, Package, Settings, Flame
+  TrendingUp, UserCheck, Share2, Package, Settings, Flame, BarChart3
 } from 'lucide-react';
 
 const navItems = [
@@ -15,6 +15,7 @@ const navItems = [
   { name: 'Coaches', path: '/coaches', icon: UserCheck },
   { name: 'Content', path: '/content', icon: Share2 },
   { name: 'Equipment', path: '/equipment', icon: Package },
+  { name: 'Reports', path: '/reports', icon: BarChart3 },
   { name: 'Settings', path: '/settings', icon: Settings },
 ];
 

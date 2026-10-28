@@ -16,6 +16,7 @@ import { Settings } from './pages/Settings';
 import { MoreMenu } from './pages/MoreMenu';
 import { MemberPortal } from './pages/portal/MemberPortal';
 import { CoachPortal } from './pages/coach/CoachPortal';
+import { ReportsPage } from './pages/Reports';
 
 const AppRoutes: React.FC = () => {
   const { role, user, isDemoMode, loading } = useAuth();
@@ -57,6 +58,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/coaches" element={<Coaches />} />
           <Route path="/content" element={<ContentTracker />} />
           <Route path="/equipment" element={<Equipment />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/more" element={<MoreMenu />} />
         </>
