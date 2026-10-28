@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Activity,
+  BarChart3,
   ChevronRight,
   Package,
   Settings,
@@ -12,6 +13,7 @@ import {
 import { AdminLayout } from '../components/layout/AdminLayout';
 
 const moreItems = [
+  { name: 'Reports', description: 'Generate business, member, attendance, and finance reports', path: '/reports', icon: BarChart3 },
   { name: 'Assessments', description: 'Track member progress and fitness assessments', path: '/assessments', icon: Activity },
   { name: 'Finance', description: 'Review revenue, expenses, and financial activity', path: '/finance', icon: TrendingUp },
   { name: 'Coaches', description: 'Manage coaches and coach performance', path: '/coaches', icon: UserCheck },
